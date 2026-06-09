@@ -81,6 +81,11 @@ export async function POST(request) {
 
     const newIndexBase64 = Buffer.from(JSON.stringify(indexData, null, 2), 'utf8').toString('base64');
     
+    const updateIndexRes = await fetch(indexUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
