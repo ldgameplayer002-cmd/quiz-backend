@@ -4,6 +4,7 @@ import ManualQuizForm from '../components/ManualQuizForm';
 import LearningForm from '../components/LearningForm';
 import Sidebar from '../components/Sidebar';
 import AccountManager from '../components/AccountManager';
+import FileManager from '../components/FileManager';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -24,6 +25,9 @@ export default function Home() {
   // AI Paste State (Learning)
   const [learningTab, setLearningTab] = useState('form');
   const [learningAiJson, setLearningAiJson] = useState('');
+
+  // Edit Mode State
+  const [editData, setEditData] = useState(null); // { url, sha, content }
 
   // Form Mode State
   const [quizQuestions, setQuizQuestions] = useState([]);
@@ -138,7 +142,7 @@ export default function Home() {
   };
 
   const saveToGithub = async (dataPayload) => {
-    setStatus({ message: 'Đang lưu lên Github...', type: 'info' });
+    setStatus({ message: 'Đang lưu đề thi lên Github...', type: 'info' });
     try {
       const response = await fetch('/api/save-quiz', {
         method: 'POST',
@@ -146,7 +150,9 @@ export default function Home() {
         body: JSON.stringify({
           grade,
           subject,
-          quizData: dataPayload
+          quizData: dataPayload,
+          existingFileUrl: editData?.url,
+          existingSha: editData?.sha
         })
       });
       const result = await response.json();
@@ -174,7 +180,9 @@ export default function Home() {
         body: JSON.stringify({
           grade,
           subject,
-          learningData: finalPayload
+          learningData: finalPayload,
+          existingFileUrl: editData?.url,
+          existingSha: editData?.sha
         })
       });
       const result = await response.json();
@@ -242,6 +250,29 @@ export default function Home() {
       saveToLearningGithub(parsed);
     } catch (e) {
       setStatus({ message: 'Lỗi Validate AI Học Tập: ' + e.message, type: 'error' });
+    }
+  };
+
+  const handleEditFile = async (fileUrl, category, sbj, grd) => {
+    setStatus({ message: 'Đang tải dữ liệu bài cũ...', type: 'info' });
+    try {
+      const res = await fetch(`/api/get-file?fileUrl=${encodeURIComponent(fileUrl)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setEditData({ url: fileUrl, sha: data.sha, content: data.content });
+      setGrade(grd);
+      setSubject(sbj);
+      setActiveView(category === 'assignments' ? 'dashboard' : 'learning');
+      
+      if (category === 'assignments') setActiveTab('form');
+      if (category === 'learning') setLearningTab('form');
+      
+      setStatus({ message: 'Đã nạp dữ liệu cũ để chỉnh sửa!', type: 'success' });
+      // Xóa message sau 3s
+      setTimeout(() => setStatus({ message: '', type: '' }), 3000);
+    } catch (err) {
+      setStatus({ message: 'Lỗi tải file: ' + err.message, type: 'error' });
     }
   };
 
@@ -356,11 +387,15 @@ export default function Home() {
               )}
 
               {learningTab === 'form' && (
-                <LearningForm key={`learning-${formResetKey}`} subject={subject} onSave={saveToLearningGithub} />
+                <LearningForm key={`learning-${formResetKey}`} subject={subject} onSave={saveToLearningGithub} initialData={editData?.content} />
               )}
             </div>
           </div>
         </>
+      )}
+
+      {activeView === 'manage' && (
+        <FileManager onEditFile={handleEditFile} />
       )}
 
       {activeView === 'dashboard' && (
@@ -444,7 +479,7 @@ export default function Home() {
           )}
 
           {activeTab === 'form' && (
-            <ManualQuizForm key={`quiz-${formResetKey}`} masterSchema={masterSchema} subject={subject} onSave={saveToGithub} />
+            <ManualQuizForm key={`quiz-${formResetKey}`} masterSchema={masterSchema} subject={subject} onSave={saveToGithub} initialData={editData?.content} />
           )}
         </div>
       </div>
@@ -469,6 +504,7 @@ export default function Home() {
                 setFormResetKey(prev => prev + 1);
                 setAiJson('');
                 setLearningAiJson('');
+                setEditData(null);
                 setStatus({ message: '', type: '' });
               }}
             >

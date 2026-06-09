@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { grade, subject, learningData } = body;
+    const { grade, subject, learningData, existingFileUrl, existingSha } = body;
 
     if (!grade || !subject || !learningData) {
       return NextResponse.json({ error: 'Thiếu thông tin bắt buộc (grade, subject, learningData)' }, { status: 400 });
@@ -20,28 +20,36 @@ export async function POST(req) {
     const REPO = 'quiz-data';
     const BRANCH = 'main';
 
-    // Tạo tên file
-    const filename = `${grade}_${subject}_${Date.now()}.json`;
-    const path = `${grade}/${subject}/learning/${filename}`;
-
-    const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`;
+    const timestamp = Date.now();
+    const filename = `${grade}_${subject}_${timestamp}.json`;
+    const folderPath = `${grade}/${subject}/learning`;
+    
+    // Nếu là Edit, dùng file cũ
+    const filePath = existingFileUrl ? existingFileUrl : `${folderPath}/${filename}`;
+    const indexPath = `${folderPath}/index.json`;
+    const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${filePath}`;
 
     // Chuyển JSON thành Base64 để Github hiểu
     const contentString = JSON.stringify(learningData, null, 2);
     const contentBase64 = Buffer.from(contentString, 'utf-8').toString('base64');
 
+    const headers = {
+      'Authorization': `Bearer ${GITHUB_TOKEN}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    };
+
+    const putBody = {
+      message: existingFileUrl ? `Chỉnh sửa bài học ${subject}` : `Tạo mới bài học ${subject}`,
+      content: contentBase64,
+      branch: BRANCH
+    };
+    if (existingSha) putBody.sha = existingSha;
+
     const res = await fetch(url, {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${GITHUB_TOKEN}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: `Thêm bài học mới: ${filename}`,
-        content: contentBase64,
-        branch: BRANCH
-      })
+      headers,
+      body: JSON.stringify(putBody)
     });
 
     const data = await res.json();
@@ -51,7 +59,6 @@ export async function POST(req) {
     }
 
     // --- BƯỚC 2: CẬP NHẬT INDEX.JSON ---
-    const indexPath = `${grade}/${subject}/learning/index.json`;
     const indexUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${indexPath}`;
     
     // Lấy index.json hiện tại
@@ -72,20 +79,31 @@ export async function POST(req) {
       try {
         indexData = JSON.parse(contentStr.replace(/^\uFEFF/, '')); // Xóa BOM nếu có
       } catch (e) {
-        indexData = []; // Nếu file rỗng hoặc lỗi thì tạo mảng mới
+        indexData = []; 
       }
     }
 
-    // Thêm object mới vào đầu mảng
-    const today = new Date();
-    const dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-    
-    indexData.unshift({
-      id: filename.replace('.json', ''),
-      title: learningData.title || `Bài học ${subject} mới`,
-      date: dateStr,
-      fileUrl: path
-    });
+    // 4. Nếu là Edit, cập nhật title hoặc push mới
+    let isExistingInIndex = false;
+    for (let i = 0; i < indexData.length; i++) {
+      if (indexData[i].fileUrl === filePath) {
+        indexData[i].title = learningData.title || indexData[i].title;
+        isExistingInIndex = true;
+        break;
+      }
+    }
+
+    if (!isExistingInIndex) {
+      const today = new Date();
+      const dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+      
+      indexData.unshift({
+        id: existingFileUrl ? existingFileUrl.split('/').pop().replace('.json', '') : `${grade}_${subject}_${timestamp}`,
+        title: learningData.title || `Bài học ${subject} mới`,
+        date: dateStr,
+        fileUrl: filePath
+      });
+    }
 
     // Đẩy index.json mới lên
     const newIndexBase64 = Buffer.from(JSON.stringify(indexData, null, 2), 'utf8').toString('base64');

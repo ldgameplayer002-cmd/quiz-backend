@@ -2,15 +2,20 @@
 import { useState, useEffect } from 'react';
 import EmojiPicker from 'emoji-picker-react';
 
-export default function LearningForm({ subject, onSave }) {
+export default function LearningForm({ subject, onSave, initialData }) {
   const [title, setTitle] = useState('');
   const [words, setWords] = useState([]);
   const [activeEmojiPicker, setActiveEmojiPicker] = useState(null);
 
   useEffect(() => {
-    setWords([]);
-    setTitle('');
-  }, [subject]);
+    if (initialData) {
+      setTitle(initialData.title || '');
+      setWords(initialData.words || []);
+    } else {
+      setWords([]);
+      setTitle('');
+    }
+  }, [subject, initialData]);
 
   const handleAddWord = () => {
     setWords([...words, { word: '', meaning: '', emoji: '' }]);

@@ -2,9 +2,13 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const { grade, subject, quizData } = await request.json();
+    const { grade, subject, quizData, existingFileUrl, existingSha } = await request.json();
 
-    const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // Read from Vercel Env
+    if (!grade || !subject || !quizData) {
+      return NextResponse.json({ error: 'Thiếu thông tin bắt buộc' }, { status: 400 });
+    }
+
+    const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
     const REPO = 'ldgameplayer002-cmd/quiz-data';
     const BRANCH = 'main';
 
@@ -12,47 +16,42 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Chưa cấu hình GITHUB_TOKEN trên server' }, { status: 500 });
     }
 
-    // Generate unique filename
+    const folderPath = `${grade}/${subject}/assignments`;
     const filename = `quiz_${Date.now()}.json`;
-    const path = `${grade}/${subject}/assignments/${filename}`; 
-    // Notice: Using assignments folder for custom quizzes
+    const filePath = existingFileUrl ? existingFileUrl : `${folderPath}/${filename}`;
+    const indexPath = `${folderPath}/index.json`;
 
-    // Convert JSON payload to Base64 (Required by GitHub API)
+    // Convert JSON payload to Base64
     const contentStr = JSON.stringify(quizData, null, 2);
-    // Safe Base64 encoding for UTF-8
     const contentBase64 = Buffer.from(contentStr, 'utf8').toString('base64');
 
-    const url = `https://api.github.com/repos/${REPO}/contents/${path}`;
+    // 1. Tạo hoặc Cập nhật file quiz
+    const putBody = {
+      message: existingFileUrl ? `Cập nhật đề thi: ${filePath}` : `Tạo đề thi mới: ${filename}`,
+      content: contentBase64,
+      branch: BRANCH,
+      ...(existingSha && { sha: existingSha })
+    };
 
-    const res = await fetch(url, {
+    const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${filePath}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${GITHUB_TOKEN}`,
         'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        message: `Tạo đề thi mới: ${filename}`,
-        content: contentBase64,
-        branch: BRANCH
-      })
+      body: JSON.stringify(putBody)
     });
 
     if (!res.ok) {
       const errBody = await res.text();
-      throw new Error(`Github API Error (Tạo file): ${res.status} - ${errBody}`);
+      throw new Error(`Github API Error (File): ${res.status} - ${errBody}`);
     }
 
-    // --- BƯỚC 2: CẬP NHẬT INDEX.JSON ---
-    const indexPath = `${grade}/${subject}/assignments/index.json`;
+    // 2. Cập nhật index.json
     const indexUrl = `https://api.github.com/repos/${REPO}/contents/${indexPath}`;
-    
-    // Lấy index.json hiện tại
     const indexRes = await fetch(indexUrl, {
-      headers: {
-        'Authorization': `Bearer ${GITHUB_TOKEN}`,
-        'Accept': 'application/vnd.github.v3+json'
-      }
+      headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
     });
 
     let indexData = [];
@@ -62,32 +61,26 @@ export async function POST(request) {
       const indexJson = await indexRes.json();
       indexSha = indexJson.sha;
       const contentStr = Buffer.from(indexJson.content, 'base64').toString('utf8');
-      try {
-        indexData = JSON.parse(contentStr.replace(/^\uFEFF/, '')); // Xóa BOM nếu có
-      } catch (e) {
-        indexData = []; // Nếu file rỗng hoặc lỗi thì tạo mảng mới
-      }
+      try { indexData = JSON.parse(contentStr.replace(/^\uFEFF/, '')); } catch (e) { indexData = []; }
     }
 
-    // Thêm object mới vào đầu mảng (mới nhất lên trên)
-    const today = new Date();
-    const dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-    
-    indexData.unshift({
-      id: filename.replace('.json', ''),
-      title: quizData.title || `Bài tập ${subject} mới`,
-      date: dateStr,
-      fileUrl: path
-    });
+    const existingIndexItem = indexData.find(item => item.fileUrl === filePath);
 
-    // Đẩy index.json mới lên
+    if (existingIndexItem) {
+      existingIndexItem.title = quizData.title || existingIndexItem.title;
+    } else {
+      const today = new Date();
+      const dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+      indexData.unshift({
+        id: existingFileUrl ? existingFileUrl.split('/').pop().replace('.json', '') : filename.replace('.json', ''),
+        title: quizData.title || `Bài tập ${subject} mới`,
+        date: dateStr,
+        fileUrl: filePath
+      });
+    }
+
     const newIndexBase64 = Buffer.from(JSON.stringify(indexData, null, 2), 'utf8').toString('base64');
     
-    const updateIndexRes = await fetch(indexUrl, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${GITHUB_TOKEN}`,
-        'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

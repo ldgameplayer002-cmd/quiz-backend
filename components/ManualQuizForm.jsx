@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import EmojiPicker from 'emoji-picker-react';
 
-export default function ManualQuizForm({ masterSchema, subject, onSave }) {
+export default function ManualQuizForm({ masterSchema, subject, onSave, initialData }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [questions, setQuestions] = useState([]);
@@ -16,12 +16,27 @@ export default function ManualQuizForm({ masterSchema, subject, onSave }) {
   const [expandedIndex, setExpandedIndex] = useState(0);
   const [activeEmojiPicker, setActiveEmojiPicker] = useState(null);
 
-  // Clear toàn bộ data khi đổi môn học
+  // Clear hoặc cập nhật data khi đổi môn học/initialData
   useEffect(() => {
-    setQuestions([]);
-    setTitle('');
-    setDescription('');
-  }, [subject]);
+    if (initialData) {
+      setTitle(initialData.title || '');
+      setDescription(initialData.description || '');
+      setQuestions(initialData.questions || []);
+    } else {
+      setQuestions([]);
+      setTitle('');
+      setDescription('');
+    }
+    
+    // Nếu có type MULTIPLE_CHOICE thì chọn luôn
+    if (schemaKeys.includes('MULTIPLE_CHOICE')) {
+      setSelectedType('MULTIPLE_CHOICE');
+    } else if (schemaKeys.length > 0) {
+      setSelectedType(schemaKeys[0]);
+    } else {
+      setSelectedType('');
+    }
+  }, [subject, schemaKeys.join(','), initialData]);
   
   useEffect(() => {
     if (schemaKeys.length > 0 && !schemaKeys.includes(selectedType)) {

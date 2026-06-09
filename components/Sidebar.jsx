@@ -20,6 +20,12 @@ export default function Sidebar({ user, onLogout, onSwitchTab, activeView }) {
           📚 Học Tập
         </button>
 
+        <button 
+          onClick={() => onSwitchTab('manage')} 
+          style={{ textAlign: 'left', padding: '1rem 1.2rem', borderRadius: '12px', background: activeView === 'manage' ? '#8B5CF6' : 'transparent', border: 'none', fontWeight: 'bold', color: activeView === 'manage' ? 'white' : 'var(--text-muted)', cursor: 'pointer', fontSize: '1.05rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          📁 Quản Lý Dữ Liệu
+        </button>
+
         {user.role === 'ADMIN' && (
           <button 
             onClick={() => onSwitchTab('accounts')} 
