@@ -1,0 +1,484 @@
+'use client';
+import { useState, useEffect } from 'react';
+import ManualQuizForm from '../components/ManualQuizForm';
+import LearningForm from '../components/LearningForm';
+import Sidebar from '../components/Sidebar';
+import AccountManager from '../components/AccountManager';
+
+export default function Home() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [activeView, setActiveView] = useState('dashboard');
+  
+  // Dashboard states
+  const [grade, setGrade] = useState('class1');
+  const [subject, setSubject] = useState('english');
+  const [activeTab, setActiveTab] = useState('form'); // 'form' or 'ai'
+
+  // AI Paste State (Quiz)
+  const [aiJson, setAiJson] = useState('');
+  const [selectedAiType, setSelectedAiType] = useState('');
+
+  // AI Paste State (Learning)
+  const [learningTab, setLearningTab] = useState('form');
+  const [learningAiJson, setLearningAiJson] = useState('');
+
+  // Form Mode State
+  const [quizQuestions, setQuizQuestions] = useState([]);
+
+  // Toast / Status
+  const [status, setStatus] = useState({ message: '', type: '' });
+  
+  // Custom Popup & Form Reset
+  const [successPopup, setSuccessPopup] = useState(false);
+  const [formResetKey, setFormResetKey] = useState(0);
+
+  // 1. Dùng useEffect để lấy Master Data từ Github lúc vừa vào Web
+  const [masterSchema, setMasterSchema] = useState({});
+  const [subjectsData, setSubjectsData] = useState(null);
+
+  useEffect(() => {
+    if (masterSchema && masterSchema[subject]) {
+      const keys = Object.keys(masterSchema[subject].types || {});
+      if (keys.length > 0 && (!selectedAiType || !keys.includes(selectedAiType))) {
+        setSelectedAiType(keys[0]);
+      }
+    }
+  }, [masterSchema, subject]);
+
+  // 1. Tải danh sách môn học khi vừa vào web
+  useEffect(() => {
+    // Thêm timestamp để chống cache của Github
+    fetch(`https://raw.githubusercontent.com/ldgameplayer002-cmd/quiz-data/refs/heads/main/masterData/subjects.json?t=${Date.now()}`)
+      .then(res => res.json())
+      .then(data => {
+        setSubjectsData(data);
+      })
+      .catch(err => {
+        console.error('Lỗi tải môn học:', err);
+        setStatus({ message: 'Vui lòng chạy lệnh node migrate_schema.js trước để tạo cấu trúc mới!', type: 'error' });
+      });
+  }, []);
+
+  // 2. Tải cấu trúc (types) của môn học hiện tại (Lazy Load)
+  useEffect(() => {
+    if (!subject || !subjectsData) return;
+    
+    // Nếu đã tải rồi thì không tải lại
+    if (masterSchema[subject]) return;
+
+    setStatus({ message: `Đang tải cấu trúc môn ${subjectsData[subject]?.name}...`, type: 'info' });
+    fetch(`https://raw.githubusercontent.com/ldgameplayer002-cmd/quiz-data/refs/heads/main/masterData/question_types/${subject}.json?t=${Date.now()}`)
+      .then(res => res.json())
+      .then(types => {
+        setMasterSchema(prev => ({
+          ...prev,
+          [subject]: {
+            name: subjectsData[subject]?.name || subject,
+            types: types
+          }
+        }));
+        setStatus({ message: '', type: '' });
+      })
+      .catch(err => {
+        console.error(err);
+        setStatus({ message: 'Lỗi tải cấu trúc môn ' + subject, type: 'error' });
+      });
+  }, [subject, subjectsData]);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem('quiz_user');
+    if (savedUser) {
+      const userObj = JSON.parse(savedUser);
+      setCurrentUser(userObj);
+      setIsLoggedIn(true);
+      
+      // Select first subject if Teacher
+      if (userObj.role !== 'ADMIN' && userObj.subjects && userObj.subjects.length > 0) {
+        setSubject(userObj.subjects[0]);
+      }
+    }
+  }, []);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setStatus({ message: 'Đang đăng nhập...', type: 'info' });
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsLoggedIn(true);
+        setCurrentUser(data.user);
+        localStorage.setItem('quiz_user', JSON.stringify(data.user));
+        setStatus({ message: 'Đăng nhập thành công!', type: 'success' });
+        
+        if (data.user.role !== 'ADMIN' && data.user.subjects.length > 0) {
+           setSubject(data.user.subjects[0]);
+        }
+      } else {
+        setStatus({ message: data.error || 'Đăng nhập thất bại', type: 'error' });
+      }
+    } catch (err) {
+      setStatus({ message: 'Lỗi mạng', type: 'error' });
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('quiz_user');
+    setCurrentUser(null);
+    setIsLoggedIn(false);
+    setPassword('');
+    setActiveView('dashboard');
+  };
+
+  const saveToGithub = async (dataPayload) => {
+    setStatus({ message: 'Đang lưu lên Github...', type: 'info' });
+    try {
+      const response = await fetch('/api/save-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          grade,
+          subject,
+          quizData: dataPayload
+        })
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setStatus({ message: 'Đã lưu đề thi thành công lên Github!', type: 'success' });
+        setSuccessPopup(true);
+      } else {
+        setStatus({ message: 'Lỗi: ' + result.error, type: 'error' });
+      }
+    } catch (err) {
+      setStatus({ message: 'Lỗi kết nối: ' + err.message, type: 'error' });
+    }
+  };
+
+  const saveToLearningGithub = async (dataPayload) => {
+    setStatus({ message: 'Đang lưu bài học lên Github...', type: 'info' });
+    try {
+      // Ép kiểu grade thành số (ví dụ: "class1" -> 1)
+      const numericGrade = parseInt(grade.replace('class', '')) || 1;
+      const finalPayload = { grade: numericGrade, ...dataPayload };
+
+      const response = await fetch('/api/save-learning', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          grade,
+          subject,
+          learningData: finalPayload
+        })
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setStatus({ message: 'Đã lưu Bài Học thành công lên Github!', type: 'success' });
+        setSuccessPopup(true);
+      } else {
+        setStatus({ message: 'Lỗi: ' + result.error, type: 'error' });
+      }
+    } catch (err) {
+      setStatus({ message: 'Lỗi kết nối: ' + err.message, type: 'error' });
+    }
+  };
+
+  // 2. Logic "Màng Lọc AI" siêu chặt chẽ cho nút "Lưu Đề" ở Tab Paste AI
+  const handleSaveAI = () => {
+    try {
+      if (!masterSchema || !masterSchema[subject]) throw new Error("Chưa tải xong Master Schema từ Github!");
+      const parsed = JSON.parse(aiJson);
+      
+      // Cross-check (Kiểm duyệt chéo)
+      const subjectTypes = masterSchema[subject].types || {};
+      
+      parsed.questions.forEach((q, index) => {
+        if (!subjectTypes[q.type]) {
+          throw new Error(`Câu hỏi ${index + 1} có loại bài '${q.type}' không tồn tại trong hệ thống cho môn này!`);
+        }
+        
+        const requiredFields = Object.keys(subjectTypes[q.type].fields || {});
+        for (const field of requiredFields) {
+          if (q[field] === undefined || q[field] === '') {
+            throw new Error(`Câu hỏi ${index + 1} (${q.type}) bị thiếu trường bắt buộc: "${field}". App Android sẽ bị lỗi nếu thiếu trường này!`);
+          }
+        }
+      });
+
+      saveToGithub(parsed); // Nếu pass màng lọc thì cho qua
+    } catch (e) {
+      setStatus({ message: 'Lỗi Validate: ' + e.message, type: 'error' });
+    }
+  };
+
+  // Logic Validate cho AI sinh Từ Vựng (Học Tập)
+  const handleSaveLearningAI = () => {
+    try {
+      const parsed = JSON.parse(learningAiJson);
+      
+      if (!parsed.title || !parsed.words || !Array.isArray(parsed.words)) {
+        throw new Error("JSON không hợp lệ! Bắt buộc phải có 'title' và mảng 'words'.");
+      }
+      
+      if (parsed.words.length === 0) {
+        throw new Error("Mảng 'words' không được để trống!");
+      }
+
+      parsed.words.forEach((w, idx) => {
+        if (w.word === undefined || w.word === '') {
+          throw new Error(`Từ vựng số ${idx + 1} bị thiếu trường 'word'!`);
+        }
+        if (w.meaning === undefined || w.meaning === '') {
+          throw new Error(`Từ vựng số ${idx + 1} bị thiếu trường 'meaning'!`);
+        }
+      });
+
+      saveToLearningGithub(parsed);
+    } catch (e) {
+      setStatus({ message: 'Lỗi Validate AI Học Tập: ' + e.message, type: 'error' });
+    }
+  };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="glass-panel animate-fade-in" style={{ maxWidth: '400px', margin: '10vh auto', padding: '2rem', textAlign: 'center' }}>
+        <h1 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>QuizApp Admin</h1>
+        <p style={{ marginBottom: '2rem', color: 'var(--text-muted)' }}>Hệ thống quản trị và soạn đề thi</p>
+        
+        {status.message && (
+          <div style={{ padding: '10px', marginBottom: '15px', borderRadius: '8px', background: status.type === 'error' ? '#FEE2E2' : '#D1FAE5', color: status.type === 'error' ? '#991B1B' : '#065F46' }}>
+            {status.message}
+          </div>
+        )}
+
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <input 
+            type="text" 
+            className="premium-input" 
+            placeholder="Tên đăng nhập..." 
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+          <input 
+            type="password" 
+            className="premium-input" 
+            placeholder="Mật khẩu..." 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <button type="submit" className="premium-btn">Đăng Nhập</button>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="animate-fade-in" style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)' }}>
+      <Sidebar user={currentUser} onLogout={handleLogout} onSwitchTab={setActiveView} activeView={activeView} />
+
+      {/* Cột Nội Dung Bên Phải */}
+      <div style={{ flex: 1, padding: '2rem 3rem', maxWidth: '1200px', margin: '0 auto', height: '100vh', overflowY: 'auto' }}>
+        {activeView === 'accounts' && currentUser?.role === 'ADMIN' && (
+        <AccountManager masterSchema={masterSchema} />
+      )}
+
+      {activeView === 'learning' && (
+        <>
+          <header className="glass-panel" style={{ padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', background: 'rgba(254, 242, 242, 0.9)' }}>
+            <h2 style={{ color: 'var(--secondary)' }}>📚 Học Tập</h2>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <select className="premium-input" style={{ width: 'auto' }} value={grade} onChange={e=>setGrade(e.target.value)}>
+                <option value="class1">Lớp 1</option>
+                <option value="class2">Lớp 2</option>
+                <option value="class3">Lớp 3</option>
+                <option value="class4">Lớp 4</option>
+                <option value="class5">Lớp 5</option>
+              </select>
+              <select className="premium-input" style={{ width: 'auto' }} value={subject} onChange={e=>setSubject(e.target.value)}>
+                {subjectsData && Object.keys(subjectsData).map(key => {
+                  if (currentUser?.role !== 'ADMIN' && !currentUser?.subjects?.includes(key)) return null;
+                  return <option key={key} value={key}>{subjectsData[key].name}</option>;
+                })}
+              </select>
+            </div>
+          </header>
+
+          {status.message && (
+            <div style={{ padding: '1rem', marginBottom: '1.5rem', borderRadius: '12px', background: status.type === 'error' ? '#FEE2E2' : status.type === 'info' ? '#DBEAFE' : '#D1FAE5', color: status.type === 'error' ? '#991B1B' : status.type === 'info' ? '#1E40AF' : '#065F46', fontWeight: '500' }}>
+              {status.message}
+            </div>
+          )}
+
+          <div className="glass-panel" style={{ padding: '0', transition: 'all 0.4s ease', background: learningTab === 'form' ? 'rgba(254, 242, 242, 0.85)' : 'rgba(255, 241, 242, 0.85)', border: learningTab === 'form' ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid rgba(225, 29, 72, 0.3)' }}>
+            <div style={{ display: 'flex', borderBottom: '1px solid var(--glass-border)' }}>
+              <button 
+                onClick={() => setLearningTab('form')}
+                style={{ flex: 1, padding: '1rem', border: 'none', background: learningTab === 'form' ? 'rgba(255,255,255,0.8)' : 'transparent', fontWeight: learningTab === 'form' ? 'bold' : 'normal', color: learningTab === 'form' ? 'var(--secondary)' : 'var(--text-muted)', borderTopLeftRadius: '24px', cursor: 'pointer', transition: 'all 0.2s' }}>
+                ✍️ Nhập Tay (Form)
+              </button>
+              <button 
+                onClick={() => setLearningTab('ai')}
+                style={{ flex: 1, padding: '1rem', border: 'none', background: learningTab === 'ai' ? 'rgba(255,255,255,0.8)' : 'transparent', fontWeight: learningTab === 'ai' ? 'bold' : 'normal', color: learningTab === 'ai' ? 'var(--secondary)' : 'var(--text-muted)', borderTopRightRadius: '24px', cursor: 'pointer', transition: 'all 0.2s' }}>
+                🤖 Dán JSON (AI)
+              </button>
+            </div>
+
+            <div style={{ padding: '2rem' }}>
+              {learningTab === 'ai' && (
+                <div>
+                  <p style={{ marginBottom: '1rem' }}>Hãy copy dòng Prompt này gửi cho ChatGPT / Claude:</p>
+                  <pre className="premium-input" style={{ background: '#f8fafc', marginBottom: '1.5rem', whiteSpace: 'pre-wrap', borderLeft: '4px solid var(--secondary)' }}>
+                    {`Hãy đóng vai một chuyên gia ngôn ngữ học, tạo cho tôi một bài học gồm 10 từ vựng tiếng Anh chủ đề [BẠN TỰ ĐIỀN] dành cho học sinh lớp ${grade.replace('class','')}, trả về duy nhất MỘT chuỗi JSON.\n\n`}
+                    {`[CẤU TRÚC JSON BẮT BUỘC]\n`}
+                    {`{\n  "title": "Tên bài học tiếng Việt (vd: Từ vựng Động Vật)",\n  "words": [\n    { "word": "Dog", "meaning": "Con chó", "emoji": "🐶" },\n    // ... thêm 9 từ nữa\n  ]\n}`}
+                  </pre>
+                  
+                  <textarea 
+                    className="premium-input" 
+                    rows="10" 
+                    placeholder='Dán đoạn JSON mà AI vừa sinh ra vào đây...'
+                    value={learningAiJson}
+                    onChange={e => setLearningAiJson(e.target.value)}
+                    style={{ resize: 'vertical', marginBottom: '1.5rem' }}
+                  />
+                  <button className="premium-btn" style={{ width: '100%', background: 'linear-gradient(135deg, #EC4899 0%, #BE185D 100%)' }} onClick={handleSaveLearningAI}>
+                    Lưu Bài Học Lên Github
+                  </button>
+                </div>
+              )}
+
+              {learningTab === 'form' && (
+                <LearningForm key={`learning-${formResetKey}`} subject={subject} onSave={saveToLearningGithub} />
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeView === 'dashboard' && (
+        <>
+          <header className="glass-panel" style={{ padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <h2>📝 Soạn Đề Mới</h2>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <select className="premium-input" style={{ width: 'auto' }} value={grade} onChange={e=>setGrade(e.target.value)}>
+                <option value="class1">Lớp 1</option>
+                <option value="class2">Lớp 2</option>
+                <option value="class3">Lớp 3</option>
+                <option value="class4">Lớp 4</option>
+                <option value="class5">Lớp 5</option>
+              </select>
+              <select className="premium-input" style={{ width: 'auto' }} value={subject} onChange={e=>setSubject(e.target.value)}>
+                {subjectsData && Object.keys(subjectsData).map(key => {
+                  if (currentUser?.role !== 'ADMIN' && !currentUser?.subjects?.includes(key)) return null;
+                  return <option key={key} value={key}>{subjectsData[key].name}</option>;
+                })}
+              </select>
+            </div>
+          </header>
+
+          {status.message && (
+        <div style={{ padding: '1rem', marginBottom: '1.5rem', borderRadius: '12px', background: status.type === 'error' ? '#FEE2E2' : status.type === 'info' ? '#DBEAFE' : '#D1FAE5', color: status.type === 'error' ? '#991B1B' : status.type === 'info' ? '#1E40AF' : '#065F46', fontWeight: '500' }}>
+          {status.message}
+        </div>
+      )}
+
+      <div className="glass-panel" style={{ padding: '0', transition: 'all 0.4s ease', background: activeTab === 'form' ? 'rgba(236, 253, 245, 0.85)' : 'rgba(245, 243, 255, 0.85)', border: activeTab === 'form' ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(139, 92, 246, 0.3)' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--glass-border)' }}>
+          <button 
+            onClick={() => setActiveTab('form')}
+            style={{ flex: 1, padding: '1rem', border: 'none', background: activeTab === 'form' ? 'rgba(255,255,255,0.8)' : 'transparent', fontWeight: activeTab === 'form' ? 'bold' : 'normal', borderTopLeftRadius: '24px', cursor: 'pointer', transition: 'all 0.2s' }}>
+            ✍️ Soạn Thủ Công (Form)
+          </button>
+          <button 
+            onClick={() => setActiveTab('ai')}
+            style={{ flex: 1, padding: '1rem', border: 'none', background: activeTab === 'ai' ? 'rgba(255,255,255,0.8)' : 'transparent', fontWeight: activeTab === 'ai' ? 'bold' : 'normal', borderTopRightRadius: '24px', cursor: 'pointer', transition: 'all 0.2s' }}>
+            🤖 Copy/Paste từ AI
+          </button>
+        </div>
+
+        <div style={{ padding: '2rem' }}>
+          {activeTab === 'ai' && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                <label style={{ fontWeight: 'bold' }}>Chọn loại câu hỏi AI cần sinh:</label>
+                <select className="premium-input" style={{ width: 'auto' }} value={selectedAiType} onChange={e=>setSelectedAiType(e.target.value)}>
+                  {masterSchema && masterSchema[subject] && Object.entries(masterSchema[subject].types || {}).map(([key, value]) => (
+                    <option key={key} value={key}>{value.name} ({key})</option>
+                  ))}
+                </select>
+              </div>
+              <p style={{ marginBottom: '1rem' }}>Sử dụng prompt sau để AI sinh đề (Copy & Paste vào ChatGPT):</p>
+              <pre className="premium-input" style={{ background: '#f8fafc', marginBottom: '1.5rem', whiteSpace: 'pre-wrap' }}>
+                {`Hãy đóng vai giáo viên, tạo 5 câu hỏi môn ${subject} ${grade} trả về MỘT chuỗi JSON hợp lệ.\n\n`}
+                {`[CẤU TRÚC JSON BẮT BUỘC]\n`}
+                {`{\n  "title": "Tiêu đề bài tập (Bạn tự nghĩ)",\n  "description": "Mô tả bài tập (Bạn tự nghĩ)",\n  "questions": [\n    // Danh sách 5 câu hỏi tuân thủ theo template dưới đây:\n  ]\n}\n\n`}
+                {`[BỐI CẢNH DỮ LIỆU CỦA TỪNG CÂU HỎI]\n`}
+                {`Ý nghĩa các trường dữ liệu AI cần sinh ra trong mỗi câu hỏi:\n`}
+                {masterSchema?.[subject]?.types?.[selectedAiType]?.fields 
+                  ? Object.entries(masterSchema[subject].types[selectedAiType].fields).map(([key, f]) => `- ${key}: ${f.label}`).join('\n')
+                  : 'Đang tải bối cảnh hoặc môn này chưa có câu hỏi nào...'}
+                
+                {`\n\nMỗi object trong mảng \`questions\` phải tuân thủ chính xác template sau:\n`}
+                {masterSchema?.[subject]?.types?.[selectedAiType]?.template 
+                  ? JSON.stringify(masterSchema[subject].types[selectedAiType].template, null, 2)
+                  : 'Đang tải template...'}
+              </pre>
+              <textarea 
+                className="premium-input" 
+                rows="10" 
+                placeholder='Dán chuỗi JSON của AI (vd: {"questions": [...]}) vào đây...'
+                value={aiJson}
+                onChange={e => setAiJson(e.target.value)}
+                style={{ resize: 'vertical', marginBottom: '1.5rem' }}
+              />
+              <button className="premium-btn" style={{ width: '100%' }} onClick={handleSaveAI}>Lưu Đề Lên Github</button>
+            </div>
+          )}
+
+          {activeTab === 'form' && (
+            <ManualQuizForm key={`quiz-${formResetKey}`} masterSchema={masterSchema} subject={subject} onSave={saveToGithub} />
+          )}
+        </div>
+      </div>
+        </>
+      )}
+      {/* SUCCESS MODAL POPUP */}
+      {successPopup && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, animation: 'fadeIn 0.3s' }}>
+          <div className="glass-panel" style={{ background: 'white', padding: '2.5rem', borderRadius: '24px', textAlign: 'center', maxWidth: '400px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <div style={{ width: '80px', height: '80px', background: '#D1FAE5', color: '#10B981', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', margin: '0 auto 1.5rem auto' }}>
+              ✓
+            </div>
+            <h2 style={{ color: '#065F46', marginBottom: '1rem', fontSize: '1.5rem' }}>Lưu Thành Công!</h2>
+            <p style={{ color: '#6B7280', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: '1.5' }}>
+              Dữ liệu của bạn đã được đẩy lên Github và sẵn sàng cho App Android!
+            </p>
+            <button 
+              className="premium-btn" 
+              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', background: '#10B981', borderRadius: '12px' }}
+              onClick={() => {
+                setSuccessPopup(false);
+                setFormResetKey(prev => prev + 1);
+                setAiJson('');
+                setLearningAiJson('');
+                setStatus({ message: '', type: '' });
+              }}
+            >
+              OK, Tuyệt Vời!
+            </button>
+          </div>
+        </div>
+      )}
+      
+      </div> {/* Đóng thẻ Cột Nội Dung Bên Phải */}
+    </div>
+  );
+}
