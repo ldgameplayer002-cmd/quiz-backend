@@ -63,11 +63,7 @@ export default function IntroLanding({ onEnter }) {
 
       {/* 3D Book Animation Container */}
       {!showContent && (
-        <div style={{
-          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          perspective: '2500px',
-          zIndex: 10
-        }}>
+        <div className="book-container">
           {/* Sách (Phần đế / Trang bên phải) */}
           <div style={{
             width: '280px',
