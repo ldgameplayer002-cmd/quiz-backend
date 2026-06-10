@@ -394,6 +394,53 @@ export default function Home() {
         </>
       )}
 
+      {activeView === 'intro' && (
+        <div style={{ animation: 'fadeIn 0.4s ease' }}>
+          <header className="glass-panel" style={{ padding: '1.5rem 2rem', marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+            <h2 style={{ color: '#D97706', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>💡</span> Giới thiệu Quiz Admin Portal
+            </h2>
+            <p style={{ color: 'var(--text-main)', fontSize: '1.05rem', margin: 0 }}>
+              Cổng trung chuyển dữ liệu học tập thông minh giữa Giáo viên và Học sinh.
+            </p>
+          </header>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div className="glass-panel" style={{ padding: '2rem' }}>
+              <h3 style={{ color: 'var(--primary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🎯</span> Tầm nhìn sản phẩm
+              </h3>
+              <p style={{ lineHeight: '1.7', color: 'var(--text-main)', marginBottom: '1rem' }}>
+                Hệ thống được thiết kế để giải phóng giáo viên khỏi những thao tác nhập liệu thủ công nhàm chán. Bằng việc kết hợp <strong>Next.js</strong>, <strong>Github</strong> và sức mạnh của <strong>Trí tuệ nhân tạo (AI)</strong>, việc ra đề thi giờ đây chỉ mất vỏn vẹn vài giây.
+              </p>
+              <p style={{ lineHeight: '1.7', color: 'var(--text-main)' }}>
+                Đặc biệt, hệ thống hoạt động hoàn toàn miễn phí, không phụ thuộc vào Database truyền thống nhờ tận dụng kho lưu trữ Github làm nơi chứa dữ liệu.
+              </p>
+            </div>
+
+            <div className="glass-panel" style={{ padding: '2rem' }}>
+              <h3 style={{ color: 'var(--secondary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🔄</span> Quy trình hoạt động
+              </h3>
+              <ul style={{ lineHeight: '1.8', color: 'var(--text-main)', paddingLeft: '1.2rem' }}>
+                <li><strong>1. Soạn đề:</strong> Giáo viên nhập liệu tay hoặc dán JSON từ AI sinh ra.</li>
+                <li><strong>2. Lưu trữ:</strong> Web tự động gói gọn thành file JSON đẩy thẳng lên Github <code>quiz-data</code>.</li>
+                <li><strong>3. Phân phối:</strong> Ứng dụng Android của học sinh lấy dữ liệu trực tiếp từ Github về máy.</li>
+                <li><strong>4. Quản lý:</strong> Quản lý bài tập tập trung, hỗ trợ xóa mềm (ẩn khỏi ứng dụng Android) cực kỳ an toàn.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', background: 'rgba(255,255,255,0.95)' }}>
+            <h3 style={{ marginBottom: '1rem', color: '#111827' }}>👨‍💻 Thông tin Tác giả</h3>
+            <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Được phát triển với niềm đam mê giáo dục bởi <strong>thuongtv</strong>.</p>
+            <p style={{ color: 'var(--text-muted)' }}>
+              ✉️ <strong>Email liên hệ:</strong> <a href="mailto:thuongtran04@gmail.com" style={{ color: 'var(--primary)', textDecoration: 'none' }}>thuongtran04@gmail.com</a>
+            </p>
+          </div>
+        </div>
+      )}
+
       {activeView === 'manage' && (
         <FileManager onEditFile={handleEditFile} />
       )}
