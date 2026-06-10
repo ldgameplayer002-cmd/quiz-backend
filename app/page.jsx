@@ -15,6 +15,7 @@ export default function Home() {
   const [activeView, setActiveView] = useState('dashboard');
   const [showLanding, setShowLanding] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Dashboard states
   const [grade, setGrade] = useState('class1');
@@ -323,10 +324,20 @@ export default function Home() {
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)' }}>
-      <Sidebar user={currentUser} onLogout={handleLogout} onSwitchTab={setActiveView} activeView={activeView} />
+      {/* Mobile Overlay */}
+      <div className={`mobile-overlay ${isSidebarOpen ? 'open' : ''}`} onClick={() => setIsSidebarOpen(false)}></div>
+
+      <Sidebar user={currentUser} onLogout={handleLogout} onSwitchTab={(view) => { setActiveView(view); setIsSidebarOpen(false); }} activeView={activeView} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
       {/* Cột Nội Dung Bên Phải */}
-      <div style={{ flex: 1, padding: '2rem 3rem', maxWidth: '1200px', margin: '0 auto', height: '100vh', overflowY: 'auto' }}>
+      <div className="main-content" style={{ flex: 1, padding: '2rem 3rem', maxWidth: '1200px', margin: '0 auto', height: '100vh', overflowY: 'auto' }}>
+        
+        {/* Mobile Header Menu Button */}
+        <div className="mobile-header" style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '1rem' }}>
+           <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)}>☰</button>
+           <h2 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--primary)' }}>QuizApp</h2>
+        </div>
+
         {activeView === 'accounts' && currentUser?.role === 'ADMIN' && (
         <AccountManager masterSchema={masterSchema} />
       )}

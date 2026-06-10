@@ -1,11 +1,15 @@
 'use client';
 
-export default function Sidebar({ user, onLogout, onSwitchTab, activeView }) {
+export default function Sidebar({ user, onLogout, onSwitchTab, activeView, isOpen, setIsOpen }) {
   if (!user) return null;
 
   return (
-    <div className="glass-panel" style={{ width: '260px', height: '100vh', position: 'sticky', top: 0, display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem', background: 'rgba(255, 255, 255, 0.95)', borderRight: '1px solid rgba(0,0,0,0.05)', borderRadius: 0, zIndex: 10 }}>
-      <h2 style={{ color: 'var(--primary)', margin: '0 0 2.5rem 0', fontSize: '1.5rem', textAlign: 'center', letterSpacing: '1px' }}>✨ QuizApp</h2>
+    <div className={`glass-panel sidebar-container ${isOpen ? 'open' : ''}`} style={{ width: '260px', height: '100vh', position: 'sticky', top: 0, display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem', background: 'rgba(255, 255, 255, 0.95)', borderRight: '1px solid rgba(0,0,0,0.05)', borderRadius: 0, zIndex: 100 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+        <h2 style={{ color: 'var(--primary)', margin: 0, fontSize: '1.5rem', textAlign: 'center', letterSpacing: '1px' }}>✨ QuizApp</h2>
+        {/* Nút đóng chỉ hiện trên Mobile */}
+        <button className="mobile-header mobile-menu-btn" style={{ width: '32px', height: '32px', border: 'none', background: '#FEE2E2', color: '#EF4444' }} onClick={() => setIsOpen(false)}>✕</button>
+      </div>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', flex: 1 }}>
         <button 

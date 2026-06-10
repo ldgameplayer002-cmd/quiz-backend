@@ -131,5 +131,64 @@ body {
 @keyframes flyOutFromCenter {
   0% { opacity: 0; transform: scale(0) translateY(100px); filter: blur(10px); }
   50% { opacity: 1; transform: scale(1.05) translateY(-10px); filter: blur(0px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
 }
+
+/* Responsive cho Mobile */
+.mobile-header {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .mobile-header {
+    display: flex !important;
+  }
+
+  .sidebar-container {
+    position: fixed !important;
+    left: -280px;
+    transition: left 0.3s ease-in-out;
+    z-index: 999 !important;
+    width: 260px !important;
+  }
+  .sidebar-container.open {
+    left: 0;
+  }
+
+  .main-content {
+    padding: 1rem !important;
+  }
+
+  .mobile-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 998;
+    animation: fadeIn 0.3s ease;
+  }
+  .mobile-overlay.open {
+    display: block;
+  }
+
+  /* Fix các panel bị tràn màn hình trên mobile */
+  header.glass-panel {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+}
+
+.mobile-menu-btn {
+  background: white;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
