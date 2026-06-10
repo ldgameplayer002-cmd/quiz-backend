@@ -20,9 +20,13 @@ export async function POST(req) {
     const REPO = 'quiz-data';
     const BRANCH = 'main';
 
-    const timestamp = Date.now();
-    const filename = `${grade}_${subject}_${timestamp}.json`;
     const folderPath = `${grade}/${subject}/learning`;
+    
+    // Tạo tên file chuẩn YYYY_MM_DD_HH_mm_ss_title
+    const d = new Date();
+    const dateStr = `${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,'0')}_${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}_${String(d.getMinutes()).padStart(2,'0')}_${String(d.getSeconds()).padStart(2,'0')}`;
+    const safeTitle = learningData.title ? learningData.title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_").toLowerCase() : 'bai_hoc';
+    const filename = `${dateStr}_${safeTitle}.json`;
     
     // Nếu là Edit, dùng file cũ
     const filePath = existingFileUrl ? existingFileUrl : `${folderPath}/${filename}`;
@@ -98,7 +102,7 @@ export async function POST(req) {
       const dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
       
       indexData.unshift({
-        id: existingFileUrl ? existingFileUrl.split('/').pop().replace('.json', '') : `${grade}_${subject}_${timestamp}`,
+        id: existingFileUrl ? existingFileUrl.split('/').pop().replace('.json', '') : filename.replace('.json', ''),
         title: learningData.title || `Bài học ${subject} mới`,
         date: dateStr,
         fileUrl: filePath

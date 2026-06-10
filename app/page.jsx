@@ -369,7 +369,7 @@ export default function Home() {
                   <pre className="premium-input" style={{ background: '#f8fafc', marginBottom: '1.5rem', whiteSpace: 'pre-wrap', borderLeft: '4px solid var(--secondary)' }}>
                     {`Hãy đóng vai một chuyên gia ngôn ngữ học, tạo cho tôi một bài học gồm 10 từ vựng tiếng Anh chủ đề [BẠN TỰ ĐIỀN] dành cho học sinh lớp ${grade.replace('class','')}, trả về duy nhất MỘT chuỗi JSON.\n\n`}
                     {`[CẤU TRÚC JSON BẮT BUỘC]\n`}
-                    {`{\n  "title": "Tên bài học tiếng Việt (vd: Từ vựng Động Vật)",\n  "words": [\n    { "word": "Dog", "meaning": "Con chó", "emoji": "🐶" },\n    // ... thêm 9 từ nữa\n  ]\n}`}
+                    {`{\n  "title": "Tên bài học tiếng Việt (vd: Từ vựng Động Vật)",\n  "rewardPoints": 20,\n  "words": [\n    { "word": "Dog", "meaning": "Con chó", "emoji": "🐶" },\n    // ... thêm 9 từ nữa\n  ]\n}`}
                   </pre>
                   
                   <textarea 
@@ -454,7 +454,7 @@ export default function Home() {
               <pre className="premium-input" style={{ background: '#f8fafc', marginBottom: '1.5rem', whiteSpace: 'pre-wrap' }}>
                 {`Hãy đóng vai giáo viên, tạo 5 câu hỏi môn ${subject} ${grade} trả về MỘT chuỗi JSON hợp lệ.\n\n`}
                 {`[CẤU TRÚC JSON BẮT BUỘC]\n`}
-                {`{\n  "title": "Tiêu đề bài tập (Bạn tự nghĩ)",\n  "description": "Mô tả bài tập (Bạn tự nghĩ)",\n  "questions": [\n    // Danh sách 5 câu hỏi tuân thủ theo template dưới đây:\n  ]\n}\n\n`}
+                {`{\n  "title": "Tiêu đề bài tập (Bạn tự nghĩ)",\n  "description": "Mô tả bài tập (Bạn tự nghĩ)",\n  "rewardPoints": 20,\n  "questions": [\n    // Danh sách 5 câu hỏi tuân thủ theo template dưới đây:\n  ]\n}\n\n`}
                 {`[BỐI CẢNH DỮ LIỆU CỦA TỪNG CÂU HỎI]\n`}
                 {`Ý nghĩa các trường dữ liệu AI cần sinh ra trong mỗi câu hỏi:\n`}
                 {masterSchema?.[subject]?.types?.[selectedAiType]?.fields 

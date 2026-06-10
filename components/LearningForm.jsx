@@ -4,16 +4,19 @@ import EmojiPicker from 'emoji-picker-react';
 
 export default function LearningForm({ subject, onSave, initialData }) {
   const [title, setTitle] = useState('');
+  const [rewardPoints, setRewardPoints] = useState(20);
   const [words, setWords] = useState([]);
   const [activeEmojiPicker, setActiveEmojiPicker] = useState(null);
 
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title || '');
+      setRewardPoints(initialData.rewardPoints || 20);
       setWords(initialData.words || []);
     } else {
       setWords([]);
       setTitle('');
+      setRewardPoints(20);
     }
   }, [subject, initialData]);
 
@@ -42,7 +45,7 @@ export default function LearningForm({ subject, onSave, initialData }) {
       alert("Vui lòng nhập ít nhất 1 từ vựng!");
       return;
     }
-    onSave({ title, words: validWords });
+    onSave({ title, rewardPoints, words: validWords });
   };
 
   return (
@@ -55,7 +58,19 @@ export default function LearningForm({ subject, onSave, initialData }) {
           placeholder="Tiêu đề bài học (VD: Từ vựng các con vật)" 
           value={title} 
           onChange={e=>setTitle(e.target.value)} 
+          style={{ marginBottom: '10px' }}
         />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <label style={{ fontWeight: '600', color: 'var(--text-main)', minWidth: '120px' }}>Điểm thưởng:</label>
+          <input 
+            type="number" 
+            className="premium-input" 
+            placeholder="20" 
+            value={rewardPoints} 
+            onChange={e=>setRewardPoints(Number(e.target.value))} 
+            style={{ width: '100px', marginBottom: '0' }} 
+          />
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>

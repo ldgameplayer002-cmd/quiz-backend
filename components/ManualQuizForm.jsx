@@ -5,6 +5,7 @@ import EmojiPicker from 'emoji-picker-react';
 export default function ManualQuizForm({ masterSchema, subject, onSave, initialData }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [rewardPoints, setRewardPoints] = useState(20);
   const [questions, setQuestions] = useState([]);
   
   const typesObj = masterSchema?.[subject]?.types || {};
@@ -21,11 +22,13 @@ export default function ManualQuizForm({ masterSchema, subject, onSave, initialD
     if (initialData) {
       setTitle(initialData.title || '');
       setDescription(initialData.description || '');
+      setRewardPoints(initialData.rewardPoints || 20);
       setQuestions(initialData.questions || []);
     } else {
       setQuestions([]);
       setTitle('');
       setDescription('');
+      setRewardPoints(20);
     }
     
     // Nếu có type MULTIPLE_CHOICE thì chọn luôn
@@ -71,7 +74,13 @@ export default function ManualQuizForm({ masterSchema, subject, onSave, initialD
   };
 
   const handleSave = () => {
-    onSave({ title, description, questions });
+    const finalPayload = {
+      title,
+      description,
+      rewardPoints,
+      questions
+    };
+    onSave(finalPayload);
   };
 
   const renderFieldInput = (qIndex, field, fieldSchema, value) => {
@@ -174,10 +183,14 @@ export default function ManualQuizForm({ masterSchema, subject, onSave, initialD
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeIn 0.3s ease-in-out' }}>
-      <div className="glass-panel" style={{ padding: '1.5rem' }}>
+      <div style={{ padding: '1.5rem', background: 'white', borderRadius: '12px', border: '1px solid #E5E7EB', marginBottom: '2rem' }}>
         <h3 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>Thông tin chung của Đề</h3>
         <input type="text" className="premium-input" placeholder="Tiêu đề (VD: Bài tập cuối tuần)" value={title} onChange={e=>setTitle(e.target.value)} style={{ marginBottom: '10px' }} />
-        <input type="text" className="premium-input" placeholder="Mô tả..." value={description} onChange={e=>setDescription(e.target.value)} />
+        <input type="text" className="premium-input" placeholder="Mô tả..." value={description} onChange={e=>setDescription(e.target.value)} style={{ marginBottom: '10px' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+          <label style={{ fontWeight: '600', color: 'var(--text-main)', minWidth: '120px' }}>Điểm thưởng:</label>
+          <input type="number" className="premium-input" placeholder="20" value={rewardPoints} onChange={e=>setRewardPoints(Number(e.target.value))} style={{ width: '100px', marginBottom: '0' }} />
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>

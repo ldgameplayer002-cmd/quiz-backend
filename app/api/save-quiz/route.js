@@ -17,7 +17,13 @@ export async function POST(request) {
     }
 
     const folderPath = `${grade}/${subject}/assignments`;
-    const filename = `quiz_${Date.now()}.json`;
+    
+    // Tạo tên file chuẩn YYYY_MM_DD_HH_mm_ss_title
+    const d = new Date();
+    const dateStr = `${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,'0')}_${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}_${String(d.getMinutes()).padStart(2,'0')}_${String(d.getSeconds()).padStart(2,'0')}`;
+    const safeTitle = quizData.title ? quizData.title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, "_").replace(/_+/g, "_").toLowerCase() : 'bai_tap';
+    const filename = `${dateStr}_${safeTitle}.json`;
+    
     const filePath = existingFileUrl ? existingFileUrl : `${folderPath}/${filename}`;
     const indexPath = `${folderPath}/index.json`;
 
