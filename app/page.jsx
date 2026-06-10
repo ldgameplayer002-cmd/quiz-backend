@@ -5,6 +5,7 @@ import LearningForm from '../components/LearningForm';
 import Sidebar from '../components/Sidebar';
 import AccountManager from '../components/AccountManager';
 import FileManager from '../components/FileManager';
+import IntroLanding from '../components/IntroLanding';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -12,6 +13,8 @@ export default function Home() {
   const [password, setPassword] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [activeView, setActiveView] = useState('dashboard');
+  const [showLanding, setShowLanding] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
   
   // Dashboard states
   const [grade, setGrade] = useState('class1');
@@ -44,6 +47,7 @@ export default function Home() {
   const [subjectsData, setSubjectsData] = useState(null);
 
   useEffect(() => {
+    setIsMounted(true);
     if (masterSchema && masterSchema[subject]) {
       const keys = Object.keys(masterSchema[subject].types || {});
       if (keys.length > 0 && (!selectedAiType || !keys.includes(selectedAiType))) {
@@ -276,6 +280,12 @@ export default function Home() {
     }
   };
 
+  if (!isMounted) return null;
+
+  if (showLanding) {
+    return <IntroLanding onEnter={() => setShowLanding(false)} />;
+  }
+
   if (!isLoggedIn) {
     return (
       <div className="glass-panel animate-fade-in" style={{ maxWidth: '400px', margin: '10vh auto', padding: '2rem', textAlign: 'center' }}>
@@ -396,47 +406,55 @@ export default function Home() {
 
       {activeView === 'intro' && (
         <div style={{ animation: 'fadeIn 0.4s ease' }}>
-          <header className="glass-panel" style={{ padding: '1.5rem 2rem', marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-            <h2 style={{ color: '#D97706', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span>💡</span> Giới thiệu Quiz Admin Portal
+          <header className="glass-panel" style={{ padding: '1.5rem 2rem', marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+            <h2 style={{ color: '#059669', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>📖</span> Hướng Dẫn Sử Dụng Hệ Thống
             </h2>
             <p style={{ color: 'var(--text-main)', fontSize: '1.05rem', margin: 0 }}>
-              Cổng trung chuyển dữ liệu học tập thông minh giữa Giáo viên và Học sinh.
+              Khám phá cách tận dụng tối đa sức mạnh của Quiz Admin Portal để ra đề thi hiệu quả.
             </p>
           </header>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '2rem' }}>
             <div className="glass-panel" style={{ padding: '2rem' }}>
               <h3 style={{ color: 'var(--primary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>🎯</span> Tầm nhìn sản phẩm
+                <span>📝</span> 1. Soạn Đề Thi / Học Tập
               </h3>
               <p style={{ lineHeight: '1.7', color: 'var(--text-main)', marginBottom: '1rem' }}>
-                Hệ thống được thiết kế để giải phóng giáo viên khỏi những thao tác nhập liệu thủ công nhàm chán. Bằng việc kết hợp <strong>Next.js</strong>, <strong>Github</strong> và sức mạnh của <strong>Trí tuệ nhân tạo (AI)</strong>, việc ra đề thi giờ đây chỉ mất vỏn vẹn vài giây.
+                Tại menu <strong>Soạn Đề Thi</strong> và <strong>Học Tập</strong>, bạn có 2 cách để tạo bài tập mới:
               </p>
-              <p style={{ lineHeight: '1.7', color: 'var(--text-main)' }}>
-                Đặc biệt, hệ thống hoạt động hoàn toàn miễn phí, không phụ thuộc vào Database truyền thống nhờ tận dụng kho lưu trữ Github làm nơi chứa dữ liệu.
-              </p>
+              <ul style={{ lineHeight: '1.8', color: 'var(--text-main)', paddingLeft: '1.5rem' }}>
+                <li><strong>Cách 1 (Soạn Thủ Công):</strong> Nhập trực tiếp từng câu hỏi vào Form. Hệ thống sẽ tự động vẽ ra các ô nhập liệu tùy theo Dạng câu hỏi (Ví dụ: Trắc nghiệm sẽ có 4 ô đáp án, Toán đố sẽ có ô nhập đề bài...). Bạn có thể tùy chỉnh Điểm thưởng (Reward Points) cho từng bài.</li>
+                <li><strong>Cách 2 (Copy/Paste từ AI):</strong> Đây là tính năng mạnh mẽ nhất. Hệ thống đã chuẩn bị sẵn một <strong>Prompt</strong> cực chuẩn. Bạn chỉ việc copy nó, gửi cho ChatGPT/Claude, sau đó copy nguyên văn kết quả JSON trả về dán vào ô nhập liệu. Quá trình tạo 10 câu hỏi chỉ mất chưa tới 10 giây!</li>
+              </ul>
             </div>
 
             <div className="glass-panel" style={{ padding: '2rem' }}>
               <h3 style={{ color: 'var(--secondary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>🔄</span> Quy trình hoạt động
+                <span>📁</span> 2. Quản Lý Dữ Liệu & Sửa Đề
               </h3>
-              <ul style={{ lineHeight: '1.8', color: 'var(--text-main)', paddingLeft: '1.2rem' }}>
-                <li><strong>1. Soạn đề:</strong> Giáo viên nhập liệu tay hoặc dán JSON từ AI sinh ra.</li>
-                <li><strong>2. Lưu trữ:</strong> Web tự động gói gọn thành file JSON đẩy thẳng lên Github <code>quiz-data</code>.</li>
-                <li><strong>3. Phân phối:</strong> Ứng dụng Android của học sinh lấy dữ liệu trực tiếp từ Github về máy.</li>
-                <li><strong>4. Quản lý:</strong> Quản lý bài tập tập trung, hỗ trợ xóa mềm (ẩn khỏi ứng dụng Android) cực kỳ an toàn.</li>
+              <p style={{ lineHeight: '1.7', color: 'var(--text-main)', marginBottom: '1rem' }}>
+                Toàn bộ dữ liệu bạn tạo ra đều được lưu an toàn trên Github. Tại màn hình <strong>Quản Lý Dữ Liệu</strong>:
+              </p>
+              <ul style={{ lineHeight: '1.8', color: 'var(--text-main)', paddingLeft: '1.5rem' }}>
+                <li><strong>Trạng thái:</strong> Bạn có thể dễ dàng nhìn thấy file nào đang "Active" (đang hiển thị cho học sinh) và "Inactive" (đã bị xóa mềm).</li>
+                <li><strong>Xóa bài (Soft Delete):</strong> Khi bấm biểu tượng 🗑️ Xóa, file không bị xóa vĩnh viễn khỏi hệ thống mà chỉ bị chuyển trạng thái thành Inactive để ẩn khỏi học sinh. Bạn luôn có thể khôi phục lại khi cần.</li>
+                <li><strong>Chỉnh sửa (Edit):</strong> Nếu phát hiện đề sai, bấm biểu tượng ✏️ Sửa. Hệ thống sẽ mở lại bài tập đó lên màn hình Soạn đề, điền sẵn thông tin cũ để bạn sửa đổi.</li>
               </ul>
             </div>
-          </div>
-
-          <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', background: 'rgba(255,255,255,0.95)' }}>
-            <h3 style={{ marginBottom: '1rem', color: '#111827' }}>👨‍💻 Thông tin Tác giả</h3>
-            <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Được phát triển với niềm đam mê giáo dục bởi <strong>thuongtv</strong>.</p>
-            <p style={{ color: 'var(--text-muted)' }}>
-              ✉️ <strong>Email liên hệ:</strong> <a href="mailto:thuongtran04@gmail.com" style={{ color: 'var(--primary)', textDecoration: 'none' }}>thuongtran04@gmail.com</a>
-            </p>
+            
+            <div className="glass-panel" style={{ padding: '2rem' }}>
+              <h3 style={{ color: '#F59E0B', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>⚙️</span> 3. Phân Quyền (Dành cho Quản trị)
+              </h3>
+              <p style={{ lineHeight: '1.7', color: 'var(--text-main)', marginBottom: '1rem' }}>
+                Tại menu <strong>Quản Lý User</strong> (chỉ ADMIN mới thấy), Quản trị viên có thể:
+              </p>
+              <ul style={{ lineHeight: '1.8', color: 'var(--text-main)', paddingLeft: '1.5rem' }}>
+                <li>Tạo tài khoản mới cho giáo viên.</li>
+                <li>Giới hạn quyền truy cập: Một giáo viên có thể chỉ được cấp quyền biên soạn nội dung cho môn Toán, môn Tiếng Anh, v.v.</li>
+              </ul>
+            </div>
           </div>
         </div>
       )}
