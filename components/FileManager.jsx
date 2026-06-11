@@ -93,21 +93,22 @@ export default function FileManager({ onEditFile }) {
         )}
 
         {!loading && files.length > 0 && (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #E5E7EB', color: 'var(--text-muted)', textAlign: 'left' }}>
-                <th style={{ padding: '1rem' }}>Tên Bài / Tên File</th>
-                <th style={{ padding: '1rem' }}>Ngày Tạo</th>
-                <th style={{ padding: '1rem' }}>Trạng Thái</th>
-                <th style={{ padding: '1rem', textAlign: 'right' }}>Hành Động</th>
-              </tr>
-            </thead>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #E5E7EB', color: 'var(--text-muted)', textAlign: 'left' }}>
+                  <th style={{ padding: '1rem', width: '40%' }}>Tên Bài / Tên File</th>
+                  <th style={{ padding: '1rem', width: '20%' }}>Ngày Tạo</th>
+                  <th style={{ padding: '1rem', width: '15%' }}>Trạng Thái</th>
+                  <th style={{ padding: '1rem', textAlign: 'right', width: '25%' }}>Hành Động</th>
+                </tr>
+              </thead>
             <tbody>
               {files.map((f, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid #F3F4F6', transition: 'background 0.2s' }}>
                   <td style={{ padding: '1rem' }}>
                     <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{f.title}</div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{f.fileUrl}</div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>{f.fileUrl}</div>
                   </td>
                   <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{f.date}</td>
                   <td style={{ padding: '1rem' }}>
@@ -117,7 +118,7 @@ export default function FileManager({ onEditFile }) {
                       <span style={{ background: '#F3F4F6', color: '#6B7280', padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600' }}>Inactive</span>
                     )}
                   </td>
-                  <td style={{ padding: '1rem', textAlign: 'right' }}>
+                  <td style={{ padding: '1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <button 
                       onClick={() => onEditFile(f.fileUrl, category, subject, grade)}
                       style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', marginRight: '8px', cursor: 'pointer', fontWeight: '500' }}>
@@ -132,7 +133,8 @@ export default function FileManager({ onEditFile }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         )}
       </div>
     </div>
