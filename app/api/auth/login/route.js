@@ -25,7 +25,7 @@ export async function POST(request) {
     if (res.status === 404) {
       // Hardcode fallback Admin if no users file yet
       if (username === 'admin' && password === 'admin') {
-        return NextResponse.json({ success: true, user: { username: 'admin', role: 'ADMIN', status: 'active', subjects: ['ALL'], grades: ['ALL'] } });
+        return NextResponse.json({ success: true, user: { username: 'admin', role: 'ADMIN', status: 'active', subjects: ['ALL'], grades: ['ALL'], viewableAuthors: ['ALL'] } });
       }
       return NextResponse.json({ error: 'Sai tài khoản hoặc mật khẩu' }, { status: 401 });
     }
@@ -57,7 +57,8 @@ export async function POST(request) {
         role: user.role,
         status: user.status || 'active',
         subjects: user.subjects || [],
-        grades: user.grades || []
+        grades: user.grades || [],
+        viewableAuthors: user.viewableAuthors || []
       }
     });
 

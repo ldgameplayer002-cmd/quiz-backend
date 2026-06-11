@@ -10,10 +10,10 @@ export default function IntroLanding({ onEnter }) {
   // 4: content_flying (8s+) - Bay chữ ra
 
   useEffect(() => {
-    const t1 = setTimeout(() => setBookState(1), 2000);
-    const t2 = setTimeout(() => setBookState(2), 4500);
-    const t3 = setTimeout(() => setBookState(3), 7000);
-    const t4 = setTimeout(() => setBookState(4), 9500);
+    const t1 = setTimeout(() => setBookState(1), 1500);
+    const t2 = setTimeout(() => setBookState(2), 3500);
+    const t3 = setTimeout(() => setBookState(3), 5500);
+    const t4 = setTimeout(() => setBookState(4), 8000);
     
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, []);
@@ -289,6 +289,21 @@ export default function IntroLanding({ onEnter }) {
           <div className="glass-panel" style={{ padding: '3.5rem', background: 'rgba(255, 255, 255, 0.92)' }}>
             <h1 style={{ color: 'var(--primary)', fontSize: '2.8rem', marginBottom: '0.8rem', textAlign: 'center', fontWeight: '800' }}>Quiz Admin Portal</h1>
             <h2 style={{ color: 'var(--text-muted)', fontSize: '1.3rem', fontWeight: '500', marginBottom: '2.5rem', textAlign: 'center' }}>Cổng quản lý và phân phối bài tập thông minh</h2>
+            
+            <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'center' }}>
+              <div className="glass-panel" style={{ width: '85vw', maxWidth: '1400px', padding: '1rem', background: '#000', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }}>
+                <video 
+                  controls 
+                  autoPlay 
+                  loop 
+                  muted
+                  style={{ width: '100%', height: 'auto', borderRadius: '8px', display: 'block' }}
+                >
+                  <source src="/intro-video.mp4" type="video/mp4" />
+                  Trình duyệt của bạn không hỗ trợ thẻ video.
+                </video>
+              </div>
+            </div>
             
             <p style={{ lineHeight: '1.8', marginBottom: '1.5rem', fontSize: '1.15rem' }}>
               <strong>Quiz Admin Portal</strong> là giải pháp hỗ trợ giáo viên tạo, quản lý và gửi bài tập đến học sinh một cách nhanh chóng, đơn giản và hiệu quả. Hệ thống được xây dựng với mong muốn giảm bớt các công việc nhập liệu lặp lại, giúp giáo viên có thêm thời gian tập trung vào việc giảng dạy.

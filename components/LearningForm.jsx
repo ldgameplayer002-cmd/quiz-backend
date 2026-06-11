@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import EmojiPicker from 'emoji-picker-react';
 
-export default function LearningForm({ subject, onSave, initialData }) {
+export default function LearningForm({ subject, onSave, initialData, readOnly }) {
   const [title, setTitle] = useState('');
   const [rewardPoints, setRewardPoints] = useState(20);
   const [words, setWords] = useState([]);
@@ -73,11 +73,13 @@ export default function LearningForm({ subject, onSave, initialData }) {
         </div>
       </div>
 
+      {!readOnly && (
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
         <button className="premium-btn" style={{ background: 'var(--secondary)', width: '100%' }} onClick={handleAddWord}>
           + Thêm Từ Vựng Mới
         </button>
       </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {words.length === 0 && (
@@ -96,12 +98,14 @@ export default function LearningForm({ subject, onSave, initialData }) {
             <div key={index} className="glass-panel" style={{ padding: '1.5rem', borderLeft: '4px solid var(--secondary)', background: 'white' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h4 style={{ color: 'var(--secondary)', margin: 0 }}>Từ vựng {index + 1}</h4>
+                {!readOnly && (
                 <button 
                   onClick={() => handleRemoveWord(index)}
                   title="Xóa từ này"
                   style={{ background: '#FEE2E2', color: '#991B1B', border: 'none', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer', fontWeight: 'bold' }}>
                   X
                 </button>
+                )}
               </div>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: '15px', alignItems: 'start' }}>
@@ -169,7 +173,7 @@ export default function LearningForm({ subject, onSave, initialData }) {
         })}
       </div>
 
-      {words.length > 0 && (
+      {!readOnly && words.length > 0 && (
         <button className="premium-btn" style={{ width: '100%', marginTop: '1rem', background: 'linear-gradient(135deg, #EC4899 0%, #BE185D 100%)' }} onClick={handleSave}>
           Lưu Bài Học Lên Github ({words.length} từ)
         </button>

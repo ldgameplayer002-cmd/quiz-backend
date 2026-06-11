@@ -4,6 +4,7 @@ import ManualQuizForm from '../components/ManualQuizForm';
 import LearningForm from '../components/LearningForm';
 import Sidebar from '../components/Sidebar';
 import AccountManager from '../components/AccountManager';
+import RegionManager from '../components/RegionManager';
 import FileManager from '../components/FileManager';
 import IntroLanding from '../components/IntroLanding';
 
@@ -13,9 +14,9 @@ export default function Home() {
   const [password, setPassword] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [activeView, setActiveView] = useState('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Dashboard states
   const [grade, setGrade] = useState('class1');
@@ -101,11 +102,12 @@ export default function Home() {
     const savedUser = localStorage.getItem('quiz_user');
     if (savedUser) {
       const userObj = JSON.parse(savedUser);
-      setCurrentUser(userObj);
       setIsLoggedIn(true);
+      setCurrentUser(userObj);
       
-      // Select first subject if Teacher
-      if (userObj.role !== 'ADMIN' && userObj.subjects && userObj.subjects.length > 0) {
+      if (userObj.role === 'REVIEWER') {
+        setActiveView('manage');
+      } else if (userObj.role !== 'ADMIN' && userObj.subjects && userObj.subjects.length > 0) {
         setSubject(userObj.subjects[0]);
       }
     }
@@ -127,7 +129,9 @@ export default function Home() {
         localStorage.setItem('quiz_user', JSON.stringify(data.user));
         setStatus({ message: 'Đăng nhập thành công!', type: 'success' });
         
-        if (data.user.role !== 'ADMIN' && data.user.subjects.length > 0) {
+        if (data.user.role === 'REVIEWER') {
+          setActiveView('manage');
+        } else if (data.user.role !== 'ADMIN' && data.user.subjects.length > 0) {
            setSubject(data.user.subjects[0]);
         }
       } else {
@@ -264,14 +268,14 @@ export default function Home() {
     }
   };
 
-  const handleEditFile = async (fileUrl, category, sbj, grd) => {
+  const handleEditFile = async (fileUrl, category, sbj, grd, author) => {
     setStatus({ message: 'Đang tải dữ liệu bài cũ...', type: 'info' });
     try {
       const res = await fetch(`/api/get-file?fileUrl=${encodeURIComponent(fileUrl)}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      setEditData({ url: fileUrl, sha: data.sha, content: data.content });
+      setEditData({ url: fileUrl, sha: data.sha, content: data.content, author });
       setGrade(grd);
       setSubject(sbj);
       setActiveView(category === 'assignments' ? 'dashboard' : 'learning');
@@ -345,8 +349,16 @@ export default function Home() {
         </div>
 
         {activeView === 'accounts' && currentUser?.role === 'ADMIN' && (
-        <AccountManager subjectsData={subjectsData} />
-      )}
+          <div className="glass-panel" style={{ padding: '2rem', animation: 'fadeIn 0.3s ease-in-out' }}>
+            <AccountManager subjectsData={subjectsData} />
+          </div>
+        )}
+
+        {activeView === 'regions' && currentUser?.role === 'ADMIN' && (
+          <div className="glass-panel" style={{ padding: '2rem', animation: 'fadeIn 0.3s ease-in-out' }}>
+            <RegionManager />
+          </div>
+        )}
 
       {activeView === 'change-password' && (
         <div className="glass-panel" style={{ padding: '2rem', maxWidth: '500px', margin: '0 auto', marginTop: '2rem' }}>
@@ -444,32 +456,42 @@ export default function Home() {
             </div>
 
             <div style={{ padding: '2rem' }}>
-              {learningTab === 'ai' && (
-                <div>
-                  <p style={{ marginBottom: '1rem' }}>Hãy copy dòng Prompt này gửi cho ChatGPT / Claude:</p>
-                  <pre className="premium-input" style={{ background: '#f8fafc', marginBottom: '1.5rem', whiteSpace: 'pre-wrap', borderLeft: '4px solid var(--secondary)' }}>
-                    {`Hãy đóng vai một chuyên gia ngôn ngữ học, tạo cho tôi một bài học gồm 10 từ vựng tiếng Anh chủ đề [BẠN TỰ ĐIỀN] dành cho học sinh lớp ${grade.replace('class','')}, trả về duy nhất MỘT chuỗi JSON.\n\n`}
-                    {`[CẤU TRÚC JSON BẮT BUỘC]\n`}
-                    {`{\n  "title": "Tên bài học tiếng Việt (vd: Từ vựng Động Vật)",\n  "rewardPoints": 20,\n  "words": [\n    { "word": "Dog", "meaning": "Con chó", "emoji": "🐶" },\n    // ... thêm 9 từ nữa\n  ]\n}`}
-                  </pre>
-                  
-                  <textarea 
-                    className="premium-input" 
-                    rows="10" 
-                    placeholder='Dán đoạn JSON mà AI vừa sinh ra vào đây...'
-                    value={learningAiJson}
-                    onChange={e => setLearningAiJson(e.target.value)}
-                    style={{ resize: 'vertical', marginBottom: '1.5rem' }}
-                  />
-                  <button className="premium-btn" style={{ width: '100%', background: 'linear-gradient(135deg, #EC4899 0%, #BE185D 100%)' }} onClick={handleSaveLearningAI}>
-                    Lưu Bài Học Lên Github
-                  </button>
-                </div>
-              )}
+              {(() => {
+                const isReadOnly = editData?.isEdit && editData?.author !== currentUser?.username && currentUser?.role !== 'ADMIN';
+                return (
+                  <>
+                    {learningTab === 'ai' && (
+                      <div>
+                        <p style={{ marginBottom: '1rem' }}>Hãy copy dòng Prompt này gửi cho ChatGPT / Claude:</p>
+                        <pre className="premium-input" style={{ background: '#f8fafc', marginBottom: '1.5rem', whiteSpace: 'pre-wrap', borderLeft: '4px solid var(--secondary)' }}>
+                          {`Hãy đóng vai một chuyên gia ngôn ngữ học, tạo cho tôi một bài học gồm 10 từ vựng tiếng Anh chủ đề [BẠN TỰ ĐIỀN] dành cho học sinh lớp ${grade.replace('class','')}, trả về duy nhất MỘT chuỗi JSON.\n\n`}
+                          {`[CẤU TRÚC JSON BẮT BUỘC]\n`}
+                          {`{\n  "title": "Tên bài học tiếng Việt (vd: Từ vựng Động Vật)",\n  "rewardPoints": 20,\n  "words": [\n    { "word": "Dog", "meaning": "Con chó", "emoji": "🐶" },\n    // ... thêm 9 từ nữa\n  ]\n}`}
+                        </pre>
+                        
+                        <textarea 
+                          className="premium-input" 
+                          rows="10" 
+                          placeholder='Dán đoạn JSON mà AI vừa sinh ra vào đây...'
+                          value={learningAiJson}
+                          onChange={e => setLearningAiJson(e.target.value)}
+                          style={{ resize: 'vertical', marginBottom: '1.5rem' }}
+                          disabled={isReadOnly}
+                        />
+                        {!isReadOnly && (
+                          <button className="premium-btn" style={{ width: '100%', background: 'linear-gradient(135deg, #EC4899 0%, #BE185D 100%)' }} onClick={handleSaveLearningAI}>
+                            Lưu Bài Học Lên Github
+                          </button>
+                        )}
+                      </div>
+                    )}
 
-              {learningTab === 'form' && (
-                <LearningForm key={`learning-${formResetKey}`} subject={subject} onSave={saveToLearningGithub} initialData={editData?.content} />
-              )}
+                    {learningTab === 'form' && (
+                      <LearningForm key={`learning-${formResetKey}`} subject={subject} onSave={saveLearningToGithub} initialData={editData?.content} readOnly={isReadOnly} />
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         </>
@@ -485,6 +507,21 @@ export default function Home() {
               Khám phá cách tận dụng tối đa sức mạnh của Quiz Admin Portal để ra đề thi hiệu quả.
             </p>
           </header>
+
+          <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'center' }}>
+            <div className="glass-panel" style={{ width: '100%', maxWidth: '800px', padding: '1rem', background: '#000', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }}>
+              <video 
+                controls 
+                autoPlay 
+                loop 
+                muted
+                style={{ width: '100%', height: 'auto', borderRadius: '8px', display: 'block' }}
+              >
+                <source src="/intro-video.mp4" type="video/mp4" />
+                Trình duyệt của bạn không hỗ trợ thẻ video.
+              </video>
+            </div>
+          </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '2rem' }}>
             <div className="glass-panel" style={{ padding: '2rem' }}>
@@ -608,13 +645,16 @@ export default function Home() {
                 value={aiJson}
                 onChange={e => setAiJson(e.target.value)}
                 style={{ resize: 'vertical', marginBottom: '1.5rem' }}
+                disabled={currentUser?.role === 'REVIEWER'}
               />
-              <button className="premium-btn" style={{ width: '100%' }} onClick={handleSaveAI}>Lưu Đề Lên Github</button>
+              {currentUser?.role !== 'REVIEWER' && (
+                <button className="premium-btn" style={{ width: '100%' }} onClick={handleSaveAI}>Lưu Đề Lên Github</button>
+              )}
             </div>
           )}
 
           {activeTab === 'form' && (
-            <ManualQuizForm key={`quiz-${formResetKey}`} masterSchema={masterSchema} subject={subject} onSave={saveToGithub} initialData={editData?.content} />
+            <ManualQuizForm key={`quiz-${formResetKey}`} masterSchema={masterSchema} subject={subject} onSave={saveToGithub} initialData={editData?.content} readOnly={currentUser?.role === 'REVIEWER'} />
           )}
         </div>
       </div>

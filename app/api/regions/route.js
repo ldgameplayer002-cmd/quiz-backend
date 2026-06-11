@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
 
 const REPO = 'ldgameplayer002-cmd/quiz-data';
 const BRANCH = 'main';
-const PATH = 'masterData/users.json';
+const PATH = 'masterData/regions.json';
 
-async function fetchUsersFromGithub(token) {
+async function fetchRegionsFromGithub(token) {
   const url = `https://api.github.com/repos/${REPO}/contents/${PATH}?ref=${BRANCH}`;
   const res = await fetch(url, {
     headers: {
@@ -31,12 +30,8 @@ export async function GET(request) {
   if (!GITHUB_TOKEN) return NextResponse.json({ error: 'Chưa cấu hình GITHUB_TOKEN' }, { status: 500 });
 
   try {
-    const { data } = await fetchUsersFromGithub(GITHUB_TOKEN);
-    const safeData = { ...data };
-    for (let key in safeData) {
-      delete safeData[key].password;
-    }
-    return NextResponse.json(safeData);
+    const { data } = await fetchRegionsFromGithub(GITHUB_TOKEN);
+    return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -47,38 +42,15 @@ export async function POST(request) {
   if (!GITHUB_TOKEN) return NextResponse.json({ error: 'Chưa cấu hình GITHUB_TOKEN' }, { status: 500 });
 
   try {
-    const { users: incomingUsers } = await request.json();
-    const { data: existingUsers, sha } = await fetchUsersFromGithub(GITHUB_TOKEN);
+    const { regions } = await request.json();
 
-    const mergedUsers = { ...existingUsers };
-
-    // Xóa những user không còn trong incomingUsers (bị Admin xóa)
-    for (const key in existingUsers) {
-      if (!incomingUsers[key]) {
-        delete mergedUsers[key];
-      }
-    }
-
-    // Cập nhật hoặc thêm mới từ incomingUsers
-    for (const key in incomingUsers) {
-      mergedUsers[key] = {
-        ...mergedUsers[key], // Giữ lại password cũ
-        ...incomingUsers[key] // Ghi đè role, subjects, grades, status...
-      };
-
-      const newPwd = incomingUsers[key].password;
-      if (newPwd && !newPwd.startsWith('$2')) { // Hash nếu có password mới
-        const salt = bcrypt.genSaltSync(10);
-        mergedUsers[key].password = bcrypt.hashSync(newPwd, salt);
-      }
-    }
-
-    const contentStr = JSON.stringify(mergedUsers, null, 2);
+    const { sha } = await fetchRegionsFromGithub(GITHUB_TOKEN);
+    const contentStr = JSON.stringify(regions, null, 2);
     const contentBase64 = Buffer.from(contentStr, 'utf8').toString('base64');
 
     const url = `https://api.github.com/repos/${REPO}/contents/${PATH}`;
     const bodyObj = {
-      message: `Cập nhật danh sách users`,
+      message: `Cập nhật danh sách regions`,
       content: contentBase64,
       branch: BRANCH
     };

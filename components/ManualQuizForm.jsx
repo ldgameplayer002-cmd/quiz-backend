@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import EmojiPicker from 'emoji-picker-react';
 
-export default function ManualQuizForm({ masterSchema, subject, onSave, initialData }) {
+export default function ManualQuizForm({ masterSchema, subject, onSave, initialData, readOnly }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [rewardPoints, setRewardPoints] = useState(20);
@@ -194,12 +194,12 @@ export default function ManualQuizForm({ masterSchema, subject, onSave, initialD
       </div>
 
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <select className="premium-input" value={selectedType} onChange={e=>setSelectedType(e.target.value)} style={{ flex: 1 }}>
+        <select className="premium-input" value={selectedType} onChange={e=>setSelectedType(e.target.value)} style={{ flex: 1 }} disabled={readOnly}>
           {schemaKeys.map(key => (
             <option key={key} value={key}>{typesObj[key].name} ({key})</option>
           ))}
         </select>
-        <button className="premium-btn" onClick={handleAddQuestion}>+ Thêm Câu Hỏi</button>
+        {!readOnly && <button className="premium-btn" onClick={handleAddQuestion}>+ Thêm Câu Hỏi</button>}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -246,12 +246,14 @@ export default function ManualQuizForm({ masterSchema, subject, onSave, initialD
                   <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
                     ▼
                   </span>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleRemoveQuestion(qIndex); }}
-                    title="Xóa câu hỏi này"
-                    style={{ background: '#FEE2E2', color: '#991B1B', border: 'none', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    X
-                  </button>
+                  {!readOnly && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleRemoveQuestion(qIndex); }}
+                      title="Xóa câu hỏi này"
+                      style={{ background: '#FEE2E2', color: '#991B1B', border: 'none', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      X
+                    </button>
+                  )}
                 </div>
               </div>
               
@@ -277,7 +279,7 @@ export default function ManualQuizForm({ masterSchema, subject, onSave, initialD
         })}
       </div>
 
-      {questions.length > 0 && (
+      {!readOnly && questions.length > 0 && (
         <button className="premium-btn" style={{ width: '100%', marginTop: '1rem', background: 'linear-gradient(135deg, #059669 0%, #10B981 100%)' }} onClick={handleSave}>
           Lưu Đề Lên Github ({questions.length} câu)
         </button>

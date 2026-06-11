@@ -12,17 +12,21 @@ export default function Sidebar({ user, onLogout, onSwitchTab, activeView, isOpe
       </div>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', flex: 1 }}>
-        <button 
-          onClick={() => onSwitchTab('dashboard')} 
-          style={{ textAlign: 'left', padding: '1rem 1.2rem', borderRadius: '12px', background: activeView === 'dashboard' ? 'var(--primary)' : 'transparent', border: 'none', fontWeight: 'bold', color: activeView === 'dashboard' ? 'white' : 'var(--text-muted)', cursor: 'pointer', fontSize: '1.05rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          📝 Soạn Đề Thi
-        </button>
+        {user.role !== 'REVIEWER' && (
+          <button 
+            onClick={() => onSwitchTab('dashboard')} 
+            style={{ textAlign: 'left', padding: '1rem 1.2rem', borderRadius: '12px', background: activeView === 'dashboard' ? 'var(--primary)' : 'transparent', border: 'none', fontWeight: 'bold', color: activeView === 'dashboard' ? 'white' : 'var(--text-muted)', cursor: 'pointer', fontSize: '1.05rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            📝 Soạn Đề Thi
+          </button>
+        )}
         
-        <button 
-          onClick={() => onSwitchTab('learning')} 
-          style={{ textAlign: 'left', padding: '1rem 1.2rem', borderRadius: '12px', background: activeView === 'learning' ? 'var(--secondary)' : 'transparent', border: 'none', fontWeight: 'bold', color: activeView === 'learning' ? 'white' : 'var(--text-muted)', cursor: 'pointer', fontSize: '1.05rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          📚 Học Tập
-        </button>
+        {user.role !== 'REVIEWER' && (
+          <button 
+            onClick={() => onSwitchTab('learning')} 
+            style={{ textAlign: 'left', padding: '1rem 1.2rem', borderRadius: '12px', background: activeView === 'learning' ? 'var(--secondary)' : 'transparent', border: 'none', fontWeight: 'bold', color: activeView === 'learning' ? 'white' : 'var(--text-muted)', cursor: 'pointer', fontSize: '1.05rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            📚 Học Tập
+          </button>
+        )}
 
         <button 
           onClick={() => onSwitchTab('manage')} 
@@ -38,6 +42,14 @@ export default function Sidebar({ user, onLogout, onSwitchTab, activeView, isOpe
 
         {user.role === 'ADMIN' && (
           <button 
+            onClick={() => onSwitchTab('regions')} 
+            style={{ textAlign: 'left', padding: '1rem 1.2rem', borderRadius: '12px', background: activeView === 'regions' ? '#10B981' : 'transparent', border: 'none', fontWeight: 'bold', color: activeView === 'regions' ? 'white' : 'var(--text-muted)', cursor: 'pointer', fontSize: '1.05rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            🌍 Quản Lý Vùng
+          </button>
+        )}
+
+        {user.role === 'ADMIN' && (
+          <button 
             onClick={() => onSwitchTab('accounts')} 
             style={{ textAlign: 'left', padding: '1rem 1.2rem', borderRadius: '12px', background: activeView === 'accounts' ? '#4B5563' : 'transparent', border: 'none', fontWeight: 'bold', color: activeView === 'accounts' ? 'white' : 'var(--text-muted)', cursor: 'pointer', fontSize: '1.05rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '10px' }}>
             ⚙️ Quản Lý User
@@ -47,8 +59,12 @@ export default function Sidebar({ user, onLogout, onSwitchTab, activeView, isOpe
 
       <div style={{ paddingTop: '2rem', borderTop: '1px solid rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ textAlign: 'center' }}>
-          <span style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>{user.username}</span>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>{user.role}</div>
+          <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            Xin chào, {user.displayName || user.username} 👋
+          </h3>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+            Vai trò: {user.role === 'ADMIN' ? 'Quản Trị Viên' : (user.role === 'REVIEWER' ? 'Người Duyệt' : 'Giáo Viên')}
+          </p>
         </div>
         <button 
           className="premium-btn" 

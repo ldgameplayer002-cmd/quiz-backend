@@ -9,6 +9,10 @@ export default function FileManager({ user, onEditFile }) {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [regions, setRegions] = useState({});
+  const [users, setUsers] = useState({});
+  const [selectedRegion, setSelectedRegion] = useState('');
+  const [selectedTeacher, setSelectedTeacher] = useState('');
 
   const subjectsData = {
     english: "Tiếng Anh",
@@ -22,7 +26,17 @@ export default function FileManager({ user, onEditFile }) {
       const res = await fetch(`/api/list-files?grade=${grade}&subject=${subject}&category=${category}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Lỗi tải danh sách');
-      setFiles(data.files || []);
+      let fetchedFiles = data.files || [];
+      if (user?.role === 'TEACHER') {
+        const allowedAuthors = user.viewableAuthors || [];
+        fetchedFiles = fetchedFiles.filter(f => {
+          const isMine = f.author === user.username;
+          const isLegacy = !f.author;
+          const isCrossView = allowedAuthors.includes(f.author) || allowedAuthors.includes('ALL');
+          return isMine || isLegacy || isCrossView;
+        });
+      }
+      setFiles(fetchedFiles);
     } catch (e) {
       setError(e.message);
     }
@@ -30,6 +44,12 @@ export default function FileManager({ user, onEditFile }) {
   };
 
   useEffect(() => {
+    fetch('/api/regions').then(res=>res.json()).then(setRegions).catch(console.error);
+    fetch('/api/auth/users').then(res=>res.json()).then(setUsers).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (!subject || !grade) return;
     fetchFiles();
   }, [grade, subject, category]);
 
@@ -59,6 +79,31 @@ export default function FileManager({ user, onEditFile }) {
     }
   };
 
+  const availableTeachers = Object.entries(users)
+    .filter(([key, u]) => u.role === 'TEACHER')
+    .filter(([key, u]) => {
+       if (user?.role === 'ADMIN') return true;
+       return key === user?.username || (user?.viewableAuthors || []).includes(key) || (user?.viewableAuthors || []).includes('ALL');
+    });
+
+  const availableRegions = [...new Set(availableTeachers.map(([key, u]) => u.region).filter(Boolean))];
+
+  const filteredTeachersForDropdown = selectedRegion 
+    ? availableTeachers.filter(([key, u]) => u.region === selectedRegion)
+    : availableTeachers;
+
+  const displayFiles = files.filter(f => {
+    if (selectedTeacher) {
+      if (selectedTeacher === 'LEGACY') return !f.author;
+      return f.author === selectedTeacher;
+    }
+    if (selectedRegion) {
+      const teachersInRegion = filteredTeachersForDropdown.map(([k]) => k);
+      return teachersInRegion.includes(f.author) || !f.author;
+    }
+    return true;
+  });
+
   return (
     <div style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
       <header className="glass-panel" style={{ padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', background: 'rgba(139, 92, 246, 0.1)' }}>
@@ -85,14 +130,33 @@ export default function FileManager({ user, onEditFile }) {
       </header>
 
       <div className="glass-panel" style={{ padding: '2rem', minHeight: '400px' }}>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem' }}>
+          <select className="premium-input" value={selectedRegion} onChange={e => { setSelectedRegion(e.target.value); setSelectedTeacher(''); }} style={{ flex: 1 }}>
+            <option value="">🌍 Tất cả Vùng</option>
+            {availableRegions.map(reg => (
+              <option key={reg} value={reg}>{regions[reg] ? regions[reg].name : reg}</option>
+            ))}
+          </select>
+          <select className="premium-input" value={selectedTeacher} onChange={e => setSelectedTeacher(e.target.value)} style={{ flex: 1 }}>
+            <option value="">👨‍🏫 Tất cả Giáo viên</option>
+            {filteredTeachersForDropdown.map(([key, u]) => (
+              <option key={key} value={key}>{u.displayName || key} ({key})</option>
+            ))}
+            {!selectedRegion && <option value="LEGACY">📂 Đề chung (Không rõ tác giả)</option>}
+          </select>
+          <button className="premium-btn" onClick={fetchFiles} disabled={loading} style={{ alignSelf: 'flex-start' }}>
+            🔄 Làm mới
+          </button>
+        </div>
+
         {loading && <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Đang tải danh sách...</p>}
         {error && <p style={{ color: '#991B1B', background: '#FEE2E2', padding: '1rem', borderRadius: '8px' }}>{error}</p>}
         
-        {!loading && !error && files.length === 0 && (
+        {!loading && !error && displayFiles.length === 0 && (
           <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic', padding: '3rem' }}>Không có bài tập nào trong thư mục này.</p>
         )}
 
-        {!loading && files.length > 0 && (
+        {!loading && displayFiles.length > 0 && (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
               <thead>
@@ -105,35 +169,50 @@ export default function FileManager({ user, onEditFile }) {
                 </tr>
               </thead>
             <tbody>
-              {files.map((f, i) => (
+              {displayFiles.map((f, i) => {
+                const isMine = f.author === user?.username;
+                const isAdmin = user?.role === 'ADMIN';
+                const canEdit = isAdmin || isMine;
+
+                return (
                 <tr key={i} style={{ borderBottom: '1px solid #F3F4F6', transition: 'background 0.2s' }}>
                   <td style={{ padding: '1rem' }}>
                     <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{f.title}</div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>{f.fileUrl}</div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
+                      <a href={f.fileUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none' }}>
+                        {f.fileUrl.split('/').pop()}
+                      </a>
+                    </div>
                   </td>
                   <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{f.date}</td>
-                  <td style={{ padding: '1rem', fontWeight: 'bold', color: 'var(--primary)' }}>{f.author || 'Admin'}</td>
+                  <td style={{ padding: '1rem', fontWeight: 'bold', color: 'var(--primary)' }}>
+                    {f.author ? (users[f.author]?.displayName || f.author) : 'Tài nguyên chung'} 
+                    {f.author && users[f.author] && users[f.author].region ? ` (${regions[users[f.author].region]?.name})` : ''}
+                  </td>
                   <td style={{ padding: '1rem' }}>
                     {f.status === 'active' ? (
-                      <span style={{ background: '#D1FAE5', color: '#065F46', padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600' }}>Active</span>
+                      <span style={{ background: '#D1FAE5', color: '#065F46', padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600' }}>Đang dùng</span>
                     ) : (
-                      <span style={{ background: '#F3F4F6', color: '#6B7280', padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600' }}>Inactive</span>
+                      <span style={{ background: '#F3F4F6', color: '#6B7280', padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600' }}>Đã ẩn</span>
                     )}
                   </td>
                   <td style={{ padding: '1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <button 
-                      onClick={() => onEditFile(f.fileUrl, category, subject, grade)}
+                      onClick={() => onEditFile(f.fileUrl, category, subject, grade, f.author)}
                       style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', marginRight: '8px', cursor: 'pointer', fontWeight: '500' }}>
-                      Sửa
+                      {canEdit ? 'Sửa' : 'Xem chi tiết'}
                     </button>
-                    <button 
-                      onClick={() => handleToggleStatus(f)}
-                      style={{ background: f.status === 'active' ? '#FEE2E2' : '#DBEAFE', color: f.status === 'active' ? '#991B1B' : '#1E40AF', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}>
-                      {f.status === 'active' ? 'Ẩn (Inactive)' : 'Khôi phục (Active)'}
-                    </button>
+                    {canEdit && (
+                      <button 
+                        onClick={() => handleToggleStatus(f)}
+                        style={{ background: f.status === 'active' ? '#FEE2E2' : '#DBEAFE', color: f.status === 'active' ? '#991B1B' : '#1E40AF', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}>
+                        {f.status === 'active' ? 'Ẩn (Inactive)' : 'Khôi phục'}
+                      </button>
+                    )}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
             </table>
           </div>
