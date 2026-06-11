@@ -226,7 +226,9 @@ export default function Home() {
 
       saveToGithub(parsed); // Nếu pass màng lọc thì cho qua
     } catch (e) {
+      alert('Lỗi Validate: ' + e.message);
       setStatus({ message: 'Lỗi Validate: ' + e.message, type: 'error' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -254,7 +256,9 @@ export default function Home() {
 
       saveToLearningGithub(parsed);
     } catch (e) {
+      alert('Lỗi Validate AI Học Tập: ' + e.message);
       setStatus({ message: 'Lỗi Validate AI Học Tập: ' + e.message, type: 'error' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
