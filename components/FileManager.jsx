@@ -177,7 +177,12 @@ export default function FileManager({ user, onEditFile }) {
                 return (
                 <tr key={i} style={{ borderBottom: '1px solid #F3F4F6', transition: 'background 0.2s' }}>
                   <td style={{ padding: '1rem' }}>
-                    <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>{f.title}</div>
+                    <div style={{ fontWeight: '600', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {f.title}
+                      <span style={{ background: '#E0E7FF', color: '#4338CA', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                        v{f.version || 1}
+                      </span>
+                    </div>
                     <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
                       <a href={f.fileUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none' }}>
                         {f.fileUrl.split('/').pop()}

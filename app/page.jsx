@@ -487,7 +487,7 @@ export default function Home() {
                     )}
 
                     {learningTab === 'form' && (
-                      <LearningForm key={`learning-${formResetKey}`} subject={subject} onSave={saveLearningToGithub} initialData={editData?.content} readOnly={isReadOnly} />
+                      <LearningForm key={`learning-${formResetKey}`} subject={subject} onSave={saveToLearningGithub} initialData={editData?.content} readOnly={isReadOnly} />
                     )}
                   </>
                 );

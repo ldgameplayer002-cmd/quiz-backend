@@ -33,6 +33,35 @@ export async function POST(req) {
     const indexPath = `${folderPath}/index.json`;
     const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${filePath}`;
 
+    // 1. Tính toán Version
+    let currentVersion = 1;
+    if (existingFileUrl) {
+      try {
+        const oldFileRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${existingFileUrl}?ref=${BRANCH}`, {
+          headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (oldFileRes.ok) {
+          const oldFileData = await oldFileRes.json();
+          const oldContentStr = Buffer.from(oldFileData.content, 'base64').toString('utf8');
+          const oldLearningData = JSON.parse(oldContentStr.replace(/^\uFEFF/, ''));
+          
+          currentVersion = oldLearningData.version || 1;
+          
+          const oldCompare = { ...oldLearningData };
+          delete oldCompare.version;
+          const newCompare = { ...learningData };
+          delete newCompare.version;
+          
+          if (JSON.stringify(oldCompare) !== JSON.stringify(newCompare)) {
+            currentVersion += 1;
+          }
+        }
+      } catch (e) {
+        console.error("Lỗi so sánh version bài học cũ:", e);
+      }
+    }
+    learningData.version = currentVersion;
+
     // Chuyển JSON thành Base64 để Github hiểu
     const contentString = JSON.stringify(learningData, null, 2);
     const contentBase64 = Buffer.from(contentString, 'utf-8').toString('base64');
@@ -92,6 +121,7 @@ export async function POST(req) {
     for (let i = 0; i < indexData.length; i++) {
       if (indexData[i].fileUrl === filePath) {
         indexData[i].title = learningData.title || indexData[i].title;
+        indexData[i].version = currentVersion;
         isExistingInIndex = true;
         break;
       }
@@ -106,7 +136,8 @@ export async function POST(req) {
         title: learningData.title || `Bài học ${subject} mới`,
         date: dateStr,
         fileUrl: filePath,
-        author: author || 'Admin'
+        author: author || 'Admin',
+        version: currentVersion
       });
     }
 

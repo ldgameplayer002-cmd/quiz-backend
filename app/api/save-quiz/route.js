@@ -27,6 +27,35 @@ export async function POST(request) {
     const filePath = existingFileUrl ? existingFileUrl : `${folderPath}/${filename}`;
     const indexPath = `${folderPath}/index.json`;
 
+    // 1. Tính toán Version
+    let currentVersion = 1;
+    if (existingFileUrl) {
+      try {
+        const oldFileRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${existingFileUrl}?ref=${BRANCH}`, {
+          headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (oldFileRes.ok) {
+          const oldFileData = await oldFileRes.json();
+          const oldContentStr = Buffer.from(oldFileData.content, 'base64').toString('utf8');
+          const oldQuizData = JSON.parse(oldContentStr.replace(/^\uFEFF/, ''));
+          
+          currentVersion = oldQuizData.version || 1;
+          
+          const oldCompare = { ...oldQuizData };
+          delete oldCompare.version;
+          const newCompare = { ...quizData };
+          delete newCompare.version;
+          
+          if (JSON.stringify(oldCompare) !== JSON.stringify(newCompare)) {
+            currentVersion += 1;
+          }
+        }
+      } catch (e) {
+        console.error("Lỗi so sánh version bài cũ:", e);
+      }
+    }
+    quizData.version = currentVersion;
+
     // Convert JSON payload to Base64
     const contentStr = JSON.stringify(quizData, null, 2);
     const contentBase64 = Buffer.from(contentStr, 'utf8').toString('base64');
@@ -74,6 +103,7 @@ export async function POST(request) {
 
     if (existingIndexItem) {
       existingIndexItem.title = quizData.title || existingIndexItem.title;
+      existingIndexItem.version = currentVersion;
     } else {
       const today = new Date();
       const dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
@@ -82,7 +112,8 @@ export async function POST(request) {
         title: quizData.title || `Bài tập ${subject} mới`,
         date: dateStr,
         fileUrl: filePath,
-        author: author || 'Admin'
+        author: author || 'Admin',
+        version: currentVersion
       });
     }
 
