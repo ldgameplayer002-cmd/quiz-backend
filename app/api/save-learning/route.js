@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { grade, subject, learningData, existingFileUrl, existingSha } = body;
+    const { grade, subject, learningData, existingFileUrl, existingSha, author } = body;
 
     if (!grade || !subject || !learningData) {
       return NextResponse.json({ error: 'Thiếu thông tin bắt buộc (grade, subject, learningData)' }, { status: 400 });
@@ -105,7 +105,8 @@ export async function POST(req) {
         id: existingFileUrl ? existingFileUrl.split('/').pop().replace('.json', '') : filename.replace('.json', ''),
         title: learningData.title || `Bài học ${subject} mới`,
         date: dateStr,
-        fileUrl: filePath
+        fileUrl: filePath,
+        author: author || 'Admin'
       });
     }
 

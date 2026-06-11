@@ -50,6 +50,12 @@ export default function Sidebar({ user, onLogout, onSwitchTab, activeView, isOpe
           <span style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>{user.username}</span>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>{user.role}</div>
         </div>
+        <button 
+          className="premium-btn" 
+          style={{ padding: '0.75rem', width: '100%', borderRadius: '12px', background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)' }} 
+          onClick={() => { onSwitchTab('change-password'); setIsOpen(false); }}>
+          Đổi Mật Khẩu
+        </button>
         <button className="premium-btn secondary" style={{ padding: '0.75rem', width: '100%', borderRadius: '12px' }} onClick={onLogout}>
           Đăng xuất
         </button>

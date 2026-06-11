@@ -157,7 +157,8 @@ export default function Home() {
           subject,
           quizData: dataPayload,
           existingFileUrl: editData?.url,
-          existingSha: editData?.sha
+          existingSha: editData?.sha,
+          author: currentUser?.username || 'Admin'
         })
       });
       const result = await response.json();
@@ -187,7 +188,8 @@ export default function Home() {
           subject,
           learningData: finalPayload,
           existingFileUrl: editData?.url,
-          existingSha: editData?.sha
+          existingSha: editData?.sha,
+          author: currentUser?.username || 'Admin'
         })
       });
       const result = await response.json();
@@ -343,7 +345,62 @@ export default function Home() {
         </div>
 
         {activeView === 'accounts' && currentUser?.role === 'ADMIN' && (
-        <AccountManager masterSchema={masterSchema} />
+        <AccountManager subjectsData={subjectsData} />
+      )}
+
+      {activeView === 'change-password' && (
+        <div className="glass-panel" style={{ padding: '2rem', maxWidth: '500px', margin: '0 auto', marginTop: '2rem' }}>
+          <h2 style={{ color: 'var(--primary)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}><span>🔐</span> Đổi Mật Khẩu</h2>
+          
+          {status.message && (
+            <div style={{ padding: '1rem', marginBottom: '1.5rem', borderRadius: '12px', background: status.type === 'error' ? '#FEE2E2' : '#D1FAE5', color: status.type === 'error' ? '#991B1B' : '#065F46', fontWeight: '500' }}>
+              {status.message}
+            </div>
+          )}
+
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            const oldPass = e.target.oldPass.value;
+            const newPass = e.target.newPass.value;
+            const confirmPass = e.target.confirmPass.value;
+
+            if (newPass !== confirmPass) {
+              return setStatus({ message: 'Mật khẩu xác nhận không khớp!', type: 'error' });
+            }
+
+            setStatus({ message: 'Đang xử lý...', type: 'info' });
+            try {
+              const res = await fetch('/api/auth/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: currentUser.username, oldPassword: oldPass, newPassword: newPass })
+              });
+              const data = await res.json();
+              if (res.ok) {
+                setStatus({ message: 'Đổi mật khẩu thành công!', type: 'success' });
+                e.target.reset();
+              } else {
+                setStatus({ message: data.error, type: 'error' });
+              }
+            } catch (err) {
+              setStatus({ message: 'Lỗi kết nối', type: 'error' });
+            }
+          }}>
+            <div style={{ marginBottom: '1.2rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-main)' }}>Mật khẩu hiện tại</label>
+              <input type="password" name="oldPass" required className="premium-input" placeholder="Nhập mật khẩu cũ..." />
+            </div>
+            <div style={{ marginBottom: '1.2rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-main)' }}>Mật khẩu mới</label>
+              <input type="password" name="newPass" required minLength="6" className="premium-input" placeholder="Mật khẩu mới (ít nhất 6 ký tự)..." />
+            </div>
+            <div style={{ marginBottom: '2rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-main)' }}>Xác nhận mật khẩu mới</label>
+              <input type="password" name="confirmPass" required minLength="6" className="premium-input" placeholder="Nhập lại mật khẩu mới..." />
+            </div>
+            <button type="submit" className="premium-btn" style={{ width: '100%', background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' }}>Lưu Mật Khẩu</button>
+          </form>
+        </div>
       )}
 
       {activeView === 'learning' && (
@@ -352,11 +409,10 @@ export default function Home() {
             <h2 style={{ color: 'var(--secondary)' }}>📚 Học Tập</h2>
             <div style={{ display: 'flex', gap: '1rem' }}>
               <select className="premium-input" style={{ width: 'auto' }} value={grade} onChange={e=>setGrade(e.target.value)}>
-                <option value="class1">Lớp 1</option>
-                <option value="class2">Lớp 2</option>
-                <option value="class3">Lớp 3</option>
-                <option value="class4">Lớp 4</option>
-                <option value="class5">Lớp 5</option>
+                {['class1', 'class2', 'class3', 'class4', 'class5'].map(g => {
+                  if (currentUser?.role !== 'ADMIN' && !currentUser?.grades?.includes(g)) return null;
+                  return <option key={g} value={g}>Lớp {g.replace('class', '')}</option>;
+                })}
               </select>
               <select className="premium-input" style={{ width: 'auto' }} value={subject} onChange={e=>setSubject(e.target.value)}>
                 {subjectsData && Object.keys(subjectsData).map(key => {
@@ -475,7 +531,7 @@ export default function Home() {
       )}
 
       {activeView === 'manage' && (
-        <FileManager onEditFile={handleEditFile} />
+        <FileManager user={currentUser} onEditFile={handleEditFile} />
       )}
 
       {activeView === 'dashboard' && (
@@ -484,11 +540,10 @@ export default function Home() {
             <h2>📝 Soạn Đề Mới</h2>
             <div style={{ display: 'flex', gap: '1rem' }}>
               <select className="premium-input" style={{ width: 'auto' }} value={grade} onChange={e=>setGrade(e.target.value)}>
-                <option value="class1">Lớp 1</option>
-                <option value="class2">Lớp 2</option>
-                <option value="class3">Lớp 3</option>
-                <option value="class4">Lớp 4</option>
-                <option value="class5">Lớp 5</option>
+                {['class1', 'class2', 'class3', 'class4', 'class5'].map(g => {
+                  if (currentUser?.role !== 'ADMIN' && !currentUser?.grades?.includes(g)) return null;
+                  return <option key={g} value={g}>Lớp {g.replace('class', '')}</option>;
+                })}
               </select>
               <select className="premium-input" style={{ width: 'auto' }} value={subject} onChange={e=>setSubject(e.target.value)}>
                 {subjectsData && Object.keys(subjectsData).map(key => {

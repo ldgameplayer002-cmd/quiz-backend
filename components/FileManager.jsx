@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-export default function FileManager({ onEditFile }) {
-  const [grade, setGrade] = useState('class1');
-  const [subject, setSubject] = useState('english');
+export default function FileManager({ user, onEditFile }) {
+  const [grade, setGrade] = useState(user?.role !== 'ADMIN' && user?.grades?.length ? user.grades[0] : 'class1');
+  const [subject, setSubject] = useState(user?.role !== 'ADMIN' && user?.subjects?.length ? user.subjects[0] : 'english');
   const [category, setCategory] = useState('assignments'); // 'assignments' or 'learning'
   
   const [files, setFiles] = useState([]);
@@ -70,16 +70,16 @@ export default function FileManager({ onEditFile }) {
             <option value="learning">Học Tập (Learning)</option>
           </select>
           <select className="premium-input" style={{ width: 'auto' }} value={grade} onChange={e=>setGrade(e.target.value)}>
-            <option value="class1">Lớp 1</option>
-            <option value="class2">Lớp 2</option>
-            <option value="class3">Lớp 3</option>
-            <option value="class4">Lớp 4</option>
-            <option value="class5">Lớp 5</option>
+            {['class1', 'class2', 'class3', 'class4', 'class5'].map(g => {
+              if (user?.role !== 'ADMIN' && !user?.grades?.includes(g)) return null;
+              return <option key={g} value={g}>Lớp {g.replace('class', '')}</option>;
+            })}
           </select>
           <select className="premium-input" style={{ width: 'auto' }} value={subject} onChange={e=>setSubject(e.target.value)}>
-            {Object.keys(subjectsData).map(k => (
-              <option key={k} value={k}>{subjectsData[k]}</option>
-            ))}
+            {Object.keys(subjectsData).map(k => {
+              if (user?.role !== 'ADMIN' && !user?.subjects?.includes(k)) return null;
+              return <option key={k} value={k}>{subjectsData[k]}</option>;
+            })}
           </select>
         </div>
       </header>
@@ -97,9 +97,10 @@ export default function FileManager({ onEditFile }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #E5E7EB', color: 'var(--text-muted)', textAlign: 'left' }}>
-                  <th style={{ padding: '1rem', width: '40%' }}>Tên Bài / Tên File</th>
-                  <th style={{ padding: '1rem', width: '20%' }}>Ngày Tạo</th>
-                  <th style={{ padding: '1rem', width: '15%' }}>Trạng Thái</th>
+                  <th style={{ padding: '1rem', width: '35%' }}>Tên Bài / Tên File</th>
+                  <th style={{ padding: '1rem', width: '15%' }}>Ngày Tạo</th>
+                  <th style={{ padding: '1rem', width: '15%' }}>Người Tạo</th>
+                  <th style={{ padding: '1rem', width: '10%' }}>Trạng Thái</th>
                   <th style={{ padding: '1rem', textAlign: 'right', width: '25%' }}>Hành Động</th>
                 </tr>
               </thead>
@@ -111,6 +112,7 @@ export default function FileManager({ onEditFile }) {
                     <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>{f.fileUrl}</div>
                   </td>
                   <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{f.date}</td>
+                  <td style={{ padding: '1rem', fontWeight: 'bold', color: 'var(--primary)' }}>{f.author || 'Admin'}</td>
                   <td style={{ padding: '1rem' }}>
                     {f.status === 'active' ? (
                       <span style={{ background: '#D1FAE5', color: '#065F46', padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600' }}>Active</span>

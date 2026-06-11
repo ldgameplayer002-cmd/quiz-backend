@@ -10,6 +10,7 @@ export default function AccountManager({ subjectsData }) {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('TEACHER');
   const [selectedSubjects, setSelectedSubjects] = useState([]);
+  const [selectedGrades, setSelectedGrades] = useState([]);
 
   const subjectsList = masterSchema ? Object.keys(masterSchema) : [];
 
@@ -40,6 +41,38 @@ export default function AccountManager({ subjectsData }) {
     }
   };
 
+  const handleToggleGrade = (grade) => {
+    if (selectedGrades.includes(grade)) {
+      setSelectedGrades(selectedGrades.filter(g => g !== grade));
+    } else {
+      setSelectedGrades([...selectedGrades, grade]);
+    }
+  };
+
+  const handleToggleUserStatus = async (userKey) => {
+    const updatedUsers = { ...users };
+    const currentStatus = updatedUsers[userKey].status || 'active';
+    updatedUsers[userKey].status = currentStatus === 'active' ? 'inactive' : 'active';
+    
+    try {
+      setStatus({ message: 'Đang cập nhật trạng thái...', type: 'info' });
+      const res = await fetch('/api/auth/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users: updatedUsers })
+      });
+      if (res.ok) {
+        setStatus({ message: 'Cập nhật trạng thái thành công!', type: 'success' });
+        fetchUsers();
+      } else {
+        const data = await res.json();
+        setStatus({ message: data.error, type: 'error' });
+      }
+    } catch (e) {
+      setStatus({ message: e.message, type: 'error' });
+    }
+  };
+
   const handleSaveUser = async () => {
     if (!username) return setStatus({ message: 'Vui lòng nhập username', type: 'error' });
     
@@ -52,7 +85,9 @@ export default function AccountManager({ subjectsData }) {
     const updatedUsers = { ...users };
     updatedUsers[username] = {
       role,
+      status: users[username]?.status || 'active',
       subjects: role === 'ADMIN' ? ['ALL'] : selectedSubjects,
+      grades: role === 'ADMIN' ? ['ALL'] : selectedGrades,
     };
     if (password) {
       updatedUsers[username].password = password;
@@ -134,6 +169,18 @@ export default function AccountManager({ subjectsData }) {
                     {subjectsData[subjectKey].name || subjectKey}
                   </label>
                 )) : <span>Đang tải danh sách môn học...</span>}
+
+                <p style={{ fontWeight: 'bold', marginBottom: '0.5rem', marginTop: '1rem' }}>Được quyền xem/giao bài Lớp:</p>
+                {['class1', 'class2', 'class3', 'class4', 'class5'].map(gradeKey => (
+                  <label key={gradeKey} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedGrades.includes(gradeKey)}
+                      onChange={() => handleToggleGrade(gradeKey)}
+                    />
+                    Lớp {gradeKey.replace('class', '')}
+                  </label>
+                ))}
               </div>
             )}
             
@@ -149,7 +196,8 @@ export default function AccountManager({ subjectsData }) {
                 <tr style={{ background: 'var(--primary)', color: 'white' }}>
                   <th style={{ padding: '10px' }}>Username</th>
                   <th style={{ padding: '10px' }}>Vai trò</th>
-                  <th style={{ padding: '10px' }}>Môn được duyệt</th>
+                  <th style={{ padding: '10px' }}>Trạng thái</th>
+                  <th style={{ padding: '10px' }}>Môn & Lớp</th>
                   <th style={{ padding: '10px', textAlign: 'center' }}>Thao tác</th>
                 </tr>
               </thead>
@@ -162,12 +210,25 @@ export default function AccountManager({ subjectsData }) {
                         {u.role}
                       </span>
                     </td>
-                    <td style={{ padding: '10px' }}>{u.role === 'ADMIN' ? 'Tất cả (ALL)' : (u.subjects || []).join(', ')}</td>
+                    <td style={{ padding: '10px' }}>
+                      <button onClick={() => handleToggleUserStatus(key)} style={{ padding: '4px 8px', background: u.status === 'inactive' ? '#FEE2E2' : '#D1FAE5', color: u.status === 'inactive' ? '#991B1B' : '#065F46', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                        {u.status === 'inactive' ? 'Inactive' : 'Active'}
+                      </button>
+                    </td>
+                    <td style={{ padding: '10px', fontSize: '0.9rem' }}>
+                      {u.role === 'ADMIN' ? 'Tất cả (ALL)' : (
+                        <div>
+                          <div><strong>Môn:</strong> {(u.subjects || []).join(', ')}</div>
+                          <div><strong>Lớp:</strong> {(u.grades || []).join(', ')}</div>
+                        </div>
+                      )}
+                    </td>
                     <td style={{ padding: '10px', textAlign: 'center' }}>
                       <button onClick={() => {
                         setUsername(key);
                         setRole(u.role);
                         setSelectedSubjects(u.subjects || []);
+                        setSelectedGrades(u.grades || []);
                         setPassword('');
                       }} style={{ marginRight: '10px', cursor: 'pointer', background: 'transparent', border: 'none', color: '#1E40AF', fontWeight: 'bold' }}>Sửa</button>
                       <button onClick={() => handleDelete(key)} style={{ cursor: 'pointer', background: 'transparent', border: 'none', color: '#991B1B', fontWeight: 'bold' }}>Xóa</button>

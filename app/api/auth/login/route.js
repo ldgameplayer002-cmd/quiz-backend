@@ -25,7 +25,7 @@ export async function POST(request) {
     if (res.status === 404) {
       // Hardcode fallback Admin if no users file yet
       if (username === 'admin' && password === 'admin') {
-        return NextResponse.json({ success: true, user: { username: 'admin', role: 'ADMIN', subjects: ['ALL'] } });
+        return NextResponse.json({ success: true, user: { username: 'admin', role: 'ADMIN', status: 'active', subjects: ['ALL'], grades: ['ALL'] } });
       }
       return NextResponse.json({ error: 'Sai tài khoản hoặc mật khẩu' }, { status: 401 });
     }
@@ -41,6 +41,10 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Sai tài khoản hoặc mật khẩu' }, { status: 401 });
     }
 
+    if (user.status === 'inactive') {
+      return NextResponse.json({ error: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Admin.' }, { status: 403 });
+    }
+
     const isMatch = bcrypt.compareSync(password, user.password);
     if (!isMatch) {
       return NextResponse.json({ error: 'Sai tài khoản hoặc mật khẩu' }, { status: 401 });
@@ -51,7 +55,9 @@ export async function POST(request) {
       user: {
         username,
         role: user.role,
-        subjects: user.subjects || []
+        status: user.status || 'active',
+        subjects: user.subjects || [],
+        grades: user.grades || []
       }
     });
 
