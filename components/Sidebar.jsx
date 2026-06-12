@@ -1,12 +1,20 @@
 'use client';
 
-export default function Sidebar({ user, onLogout, onSwitchTab, activeView, isOpen, setIsOpen }) {
+export default function Sidebar({ user, onLogout, onSwitchTab, activeView, isOpen, setIsOpen, onHome }) {
   if (!user) return null;
 
   return (
     <div className={`glass-panel sidebar-container ${isOpen ? 'open' : ''}`} style={{ width: '260px', height: '100vh', position: 'sticky', top: 0, display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem', background: 'rgba(255, 255, 255, 0.95)', borderRight: '1px solid rgba(0,0,0,0.05)', borderRadius: 0, zIndex: 100 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-        <h2 style={{ color: 'var(--primary)', margin: 0, fontSize: '1.5rem', textAlign: 'center', letterSpacing: '1px' }}>✨ QuizApp</h2>
+        <h2 
+          onClick={onHome}
+          style={{ color: 'var(--primary)', margin: 0, fontSize: '1.5rem', textAlign: 'center', letterSpacing: '1px', cursor: 'pointer', transition: 'transform 0.2s', padding: '5px' }}
+          onMouseOver={e=>e.currentTarget.style.transform='scale(1.05)'} 
+          onMouseOut={e=>e.currentTarget.style.transform='scale(1)'}
+          title="Trở về trang Giới thiệu (Home)"
+        >
+          ✨ QuizApp
+        </h2>
         {/* Nút đóng chỉ hiện trên Mobile */}
         <button className="mobile-header mobile-menu-btn" style={{ width: '32px', height: '32px', border: 'none', background: '#FEE2E2', color: '#EF4444' }} onClick={() => setIsOpen(false)}>✕</button>
       </div>
@@ -52,7 +60,15 @@ export default function Sidebar({ user, onLogout, onSwitchTab, activeView, isOpe
           <button 
             onClick={() => onSwitchTab('accounts')} 
             style={{ textAlign: 'left', padding: '1rem 1.2rem', borderRadius: '12px', background: activeView === 'accounts' ? '#4B5563' : 'transparent', border: 'none', fontWeight: 'bold', color: activeView === 'accounts' ? 'white' : 'var(--text-muted)', cursor: 'pointer', fontSize: '1.05rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            ⚙️ Quản Lý User
+            👥 Quản Lý User
+          </button>
+        )}
+
+        {user.role === 'ADMIN' && (
+          <button 
+            onClick={() => onSwitchTab('appconfig')} 
+            style={{ textAlign: 'left', padding: '1rem 1.2rem', borderRadius: '12px', background: activeView === 'appconfig' ? '#EC4899' : 'transparent', border: 'none', fontWeight: 'bold', color: activeView === 'appconfig' ? 'white' : 'var(--text-muted)', cursor: 'pointer', fontSize: '1.05rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            ⚙️ Cài Đặt Ứng Dụng
           </button>
         )}
       </div>

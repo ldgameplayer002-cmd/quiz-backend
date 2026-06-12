@@ -1,8 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-export default function IntroLanding({ onEnter }) {
-  const [bookState, setBookState] = useState(0); 
+export default function IntroLanding({ onEnter, skipAnimation }) {
+  const [bookState, setBookState] = useState(skipAnimation ? 4 : 0); 
+  const [downloadLink, setDownloadLink] = useState('');
+  const timeoutRefs = useRef([]);
+
   // 0: closed (0-2s) - Tối mờ
   // 1: cover_open (2-4s) - Mở bìa, sáng nhẹ
   // 2: page_turned (4-6s) - Lật trang, sáng mạnh
@@ -10,16 +13,29 @@ export default function IntroLanding({ onEnter }) {
   // 4: content_flying (8s+) - Bay chữ ra
 
   useEffect(() => {
-    const t1 = setTimeout(() => setBookState(1), 1500);
-    const t2 = setTimeout(() => setBookState(2), 3500);
-    const t3 = setTimeout(() => setBookState(3), 5500);
-    const t4 = setTimeout(() => setBookState(4), 8000);
+    fetch('/api/app-config')
+      .then(res => res.json())
+      .then(data => {
+        if (data.url) setDownloadLink(data.url);
+      })
+      .catch(err => console.error("Lỗi load config:", err));
+
+    if (skipAnimation) {
+      setBookState(4);
+      return;
+    }
+
+    timeoutRefs.current.push(setTimeout(() => setBookState(1), 1500));
+    timeoutRefs.current.push(setTimeout(() => setBookState(2), 3500));
+    timeoutRefs.current.push(setTimeout(() => setBookState(3), 5500));
+    timeoutRefs.current.push(setTimeout(() => setBookState(4), 8000));
     
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, []);
+    return () => timeoutRefs.current.forEach(clearTimeout);
+  }, [skipAnimation]);
 
   const handleSkip = () => {
-    onEnter(); // Bấm Skip là nhảy thẳng vào Hệ thống luôn (Bắt đầu ngay)
+    timeoutRefs.current.forEach(clearTimeout);
+    setBookState(4); // Skip the animation, go straight to the intro page content
   };
 
   const showContent = bookState >= 4;
@@ -272,7 +288,7 @@ export default function IntroLanding({ onEnter }) {
             boxShadow: '0 10px 25px rgba(236, 72, 153, 0.4)'
           }}
         >
-          Bắt đầu ngay 🚀
+          Skip ⏭
         </button>
       )}
 
@@ -346,27 +362,46 @@ export default function IntroLanding({ onEnter }) {
 
             <hr style={{ border: 'none', borderTop: '1px solid rgba(0,0,0,0.1)', margin: '2.5rem 0' }} />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2rem' }}>
-              <div>
-                <h4 style={{ color: 'var(--text-main)', fontSize: '1.3rem', marginBottom: '0.5rem' }}>ThuongTV</h4>
-                <p style={{ color: 'var(--text-muted)', fontSize: '1rem', maxWidth: '350px', marginBottom: '0.8rem', lineHeight: '1.6' }}>
-                  Được phát triển với niềm đam mê giáo dục và mong muốn tạo ra những công cụ học tập hữu ích.
-                </p>
-                <a href="mailto:thuongtran04@gmail.com" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.1rem' }}>📧 thuongtran04@gmail.com</a>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '2rem' }}>
+              <div style={{ display: 'flex', gap: '2.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                {downloadLink && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(255,255,255,0.6)', padding: '1.2rem', borderRadius: '20px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ color: 'var(--primary)', fontSize: '1.1rem', marginBottom: '1rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>📱 Tải App Ở Đây</h4>
+                    <a href={downloadLink} target="_blank" rel="noreferrer" style={{ display: 'block', background: '#fff', padding: '12px', borderRadius: '16px', boxShadow: '0 8px 25px rgba(0,0,0,0.15)', cursor: 'pointer', transition: 'transform 0.2s', outline: '3px solid var(--secondary)', outlineOffset: '2px' }} onMouseOver={e=>e.currentTarget.style.transform='scale(1.05)'} onMouseOut={e=>e.currentTarget.style.transform='scale(1)'}>
+                      <img 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(downloadLink)}`} 
+                        alt="QR Code Tải App" 
+                        style={{ width: '130px', height: '130px', display: 'block', borderRadius: '8px' }} 
+                      />
+                    </a>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '1rem', fontWeight: '500', textAlign: 'center', marginBottom: 0 }}>
+                      Quét mã hoặc click vào ảnh để tải app
+                    </p>
+                  </div>
+                )}
+                
+                <div>
+                  <h4 style={{ color: 'var(--text-main)', fontSize: '1.3rem', marginBottom: '0.5rem' }}>ThuongTV</h4>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '1rem', maxWidth: '300px', marginBottom: '0.8rem', lineHeight: '1.6' }}>
+                    Được phát triển với niềm đam mê giáo dục và mong muốn tạo ra những công cụ học tập hữu ích.
+                  </p>
+                  <a href="mailto:thuongtran04@gmail.com" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.1rem' }}>📧 thuongtran04@gmail.com</a>
+                </div>
               </div>
               
               <button 
                 onClick={onEnter}
                 className="premium-btn btn-pulse" 
                 style={{ 
-                  fontSize: '1.3rem', 
-                  padding: '1.2rem 3.5rem', 
+                  fontSize: '1.4rem', 
+                  padding: '1.2rem 4rem', 
                   borderRadius: '100px',
                   background: 'linear-gradient(135deg, #EC4899, #BE185D)',
-                  boxShadow: '0 10px 25px rgba(236, 72, 153, 0.4)'
+                  boxShadow: '0 10px 30px rgba(236, 72, 153, 0.4)',
+                  whiteSpace: 'nowrap'
                 }}
               >
-                Bắt đầu ngay 🚀
+                Vào soạn đề 🚀
               </button>
             </div>
           </div>

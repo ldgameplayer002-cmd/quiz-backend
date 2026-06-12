@@ -7,6 +7,7 @@ import AccountManager from '../components/AccountManager';
 import RegionManager from '../components/RegionManager';
 import FileManager from '../components/FileManager';
 import IntroLanding from '../components/IntroLanding';
+import AppConfigManager from '../components/AppConfigManager';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -16,6 +17,7 @@ export default function Home() {
   const [activeView, setActiveView] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
+  const [skipIntroAnimation, setSkipIntroAnimation] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   
   // Dashboard states
@@ -294,7 +296,7 @@ export default function Home() {
   if (!isMounted) return null;
 
   if (showLanding) {
-    return <IntroLanding onEnter={() => setShowLanding(false)} />;
+    return <IntroLanding onEnter={() => setShowLanding(false)} skipAnimation={skipIntroAnimation} />;
   }
 
   if (!isLoggedIn) {
@@ -337,7 +339,7 @@ export default function Home() {
       {/* Mobile Overlay */}
       <div className={`mobile-overlay ${isSidebarOpen ? 'open' : ''}`} onClick={() => setIsSidebarOpen(false)}></div>
 
-      <Sidebar user={currentUser} onLogout={handleLogout} onSwitchTab={(view) => { setActiveView(view); setIsSidebarOpen(false); }} activeView={activeView} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+      <Sidebar user={currentUser} onLogout={handleLogout} onSwitchTab={(view) => { setActiveView(view); setIsSidebarOpen(false); }} activeView={activeView} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} onHome={() => { setSkipIntroAnimation(true); setShowLanding(true); }} />
 
       {/* Cột Nội Dung Bên Phải */}
       <div className="main-content" style={{ flex: 1, padding: '2rem 3rem', maxWidth: '1200px', margin: '0 auto', height: '100vh', overflowY: 'auto' }}>
@@ -352,6 +354,10 @@ export default function Home() {
           <div className="glass-panel" style={{ padding: '2rem', animation: 'fadeIn 0.3s ease-in-out' }}>
             <AccountManager subjectsData={subjectsData} />
           </div>
+        )}
+
+        {activeView === 'appconfig' && currentUser?.role === 'ADMIN' && (
+          <AppConfigManager user={currentUser} />
         )}
 
         {activeView === 'regions' && currentUser?.role === 'ADMIN' && (
