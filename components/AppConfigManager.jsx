@@ -34,12 +34,20 @@ export default function AppConfigManager({ user }) {
     setLoading(true);
     setStatus({ type: '', message: '' });
     
+    // Auto convert Google Drive links to direct download links
+    let finalUrl = config.url.trim();
+    const driveRegex = /drive\.google\.com\/file\/d\/([^/]+)/;
+    const match = finalUrl.match(driveRegex);
+    if (match && match[1]) {
+      finalUrl = `https://drive.google.com/uc?export=download&id=${match[1]}`;
+    }
+    
     try {
       const res = await fetch('/api/app-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          url: config.url,
+          url: finalUrl,
           release: config.release,
           description: config.description,
           forceUpdate: config.forceUpdate
