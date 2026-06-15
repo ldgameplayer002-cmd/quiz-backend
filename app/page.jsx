@@ -335,7 +335,7 @@ export default function Home() {
   }
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)' }}>
+    <div className="animate-fade-in" style={{ position: 'relative', display: 'flex', minHeight: '100vh', background: 'var(--background)' }}>
       {/* Mobile Overlay */}
       <div className={`mobile-overlay ${isSidebarOpen ? 'open' : ''}`} onClick={() => setIsSidebarOpen(false)}></div>
 

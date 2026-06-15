@@ -157,9 +157,9 @@ export default function FileManager({ user, onEditFile }) {
         )}
 
         {!loading && displayFiles.length > 0 && (
-          <div style={{ width: '100%', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto' }}>
-              <thead>
+          <div style={{ width: '100%', overflowX: 'auto', maxHeight: 'calc(100vh - 280px)', overflowY: 'auto', border: '1px solid #E5E7EB', borderRadius: '12px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: '700px' }}>
+              <thead style={{ position: 'sticky', top: 0, background: '#F8FAFC', zIndex: 10 }}>
                 <tr style={{ borderBottom: '2px solid #E5E7EB', color: 'var(--text-muted)', textAlign: 'left' }}>
                   <th style={{ padding: '1rem', width: '40%' }}>Tên Bài / Tên File</th>
                   <th style={{ padding: '1rem', width: '15%' }}>Ngày Tạo</th>
@@ -175,9 +175,9 @@ export default function FileManager({ user, onEditFile }) {
                 const canEdit = isAdmin || isMine;
 
                 return (
-                <tr key={i} style={{ borderBottom: '1px solid #F3F4F6', transition: 'background 0.2s' }}>
-                  <td style={{ padding: '1rem' }}>
-                    <div style={{ fontWeight: '600', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <tr key={i} style={{ borderBottom: '1px solid #F3F4F6', transition: 'background 0.2s', background: 'white' }}>
+                  <td style={{ padding: '1rem', overflow: 'hidden' }}>
+                    <div style={{ fontWeight: '600', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', wordBreak: 'break-word' }}>
                       {f.title}
                       <span style={{ background: '#E0E7FF', color: '#4338CA', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>
                         v{f.version || 1}
