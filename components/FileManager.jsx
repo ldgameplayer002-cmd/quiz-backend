@@ -157,15 +157,15 @@ export default function FileManager({ user, onEditFile }) {
         )}
 
         {!loading && displayFiles.length > 0 && (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
+          <div style={{ width: '100%', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #E5E7EB', color: 'var(--text-muted)', textAlign: 'left' }}>
-                  <th style={{ padding: '1rem', width: '35%' }}>Tên Bài / Tên File</th>
+                  <th style={{ padding: '1rem', width: '40%' }}>Tên Bài / Tên File</th>
                   <th style={{ padding: '1rem', width: '15%' }}>Ngày Tạo</th>
                   <th style={{ padding: '1rem', width: '15%' }}>Người Tạo</th>
                   <th style={{ padding: '1rem', width: '10%' }}>Trạng Thái</th>
-                  <th style={{ padding: '1rem', textAlign: 'right', width: '25%' }}>Hành Động</th>
+                  <th style={{ padding: '1rem', textAlign: 'right', width: '20%' }}>Hành Động</th>
                 </tr>
               </thead>
             <tbody>
@@ -204,14 +204,22 @@ export default function FileManager({ user, onEditFile }) {
                   <td style={{ padding: '1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <button 
                       onClick={() => onEditFile(f.fileUrl, category, subject, grade, f.author)}
-                      style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', marginRight: '8px', cursor: 'pointer', fontWeight: '500' }}>
-                      {canEdit ? 'Sửa' : 'Xem chi tiết'}
+                      title="Xem nội dung và đáp án"
+                      style={{ background: '#10B981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', marginRight: '6px', cursor: 'pointer', fontWeight: '500' }}>
+                      👀 Xem
                     </button>
+                    {canEdit && (
+                      <button 
+                        onClick={() => onEditFile(f.fileUrl, category, subject, grade, f.author)}
+                        style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', marginRight: '6px', cursor: 'pointer', fontWeight: '500' }}>
+                        ✏️ Sửa
+                      </button>
+                    )}
                     {canEdit && (
                       <button 
                         onClick={() => handleToggleStatus(f)}
                         style={{ background: f.status === 'active' ? '#FEE2E2' : '#DBEAFE', color: f.status === 'active' ? '#991B1B' : '#1E40AF', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}>
-                        {f.status === 'active' ? 'Ẩn (Inactive)' : 'Khôi phục'}
+                        {f.status === 'active' ? 'Ẩn' : 'Hiện'}
                       </button>
                     )}
                   </td>
