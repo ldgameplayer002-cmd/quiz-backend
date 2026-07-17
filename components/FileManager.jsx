@@ -23,7 +23,7 @@ export default function FileManager({ user, onEditFile }) {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/list-files?grade=${grade}&subject=${subject}&category=${category}`);
+      const res = await fetch(`/api/list-files?grade=${grade}&subject=${subject}&category=${category}&t=${Date.now()}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Lỗi tải danh sách');
       let fetchedFiles = data.files || [];
@@ -80,10 +80,9 @@ export default function FileManager({ user, onEditFile }) {
   };
 
   const availableTeachers = Object.entries(users)
-    .filter(([key, u]) => u.role === 'TEACHER')
     .filter(([key, u]) => {
        if (user?.role === 'ADMIN') return true;
-       return key === user?.username || (user?.viewableAuthors || []).includes(key) || (user?.viewableAuthors || []).includes('ALL');
+       return key === user?.username || u.role === 'ADMIN' || (user?.viewableAuthors || []).includes(key) || (user?.viewableAuthors || []).includes('ALL');
     });
 
   const availableRegions = [...new Set(availableTeachers.map(([key, u]) => u.region).filter(Boolean))];
@@ -93,14 +92,24 @@ export default function FileManager({ user, onEditFile }) {
     : availableTeachers;
 
   const displayFiles = files.filter(f => {
+    // 1. Kiểm tra quyền hiển thị (Normal user chỉ thấy file active hoặc file của chính họ)
+    if (user?.role !== 'ADMIN') {
+      const isMine = f.author === user?.username;
+      const isActive = f.status === 'active';
+      if (!isMine && !isActive) return false;
+    }
+
+    // 2. Lọc theo dropdown
     if (selectedTeacher) {
       if (selectedTeacher === 'LEGACY') return !f.author;
       return f.author === selectedTeacher;
     }
+    
     if (selectedRegion) {
       const teachersInRegion = filteredTeachersForDropdown.map(([k]) => k);
       return teachersInRegion.includes(f.author) || !f.author;
     }
+    
     return true;
   });
 
@@ -138,7 +147,7 @@ export default function FileManager({ user, onEditFile }) {
             ))}
           </select>
           <select className="premium-input" value={selectedTeacher} onChange={e => setSelectedTeacher(e.target.value)} style={{ flex: 1 }}>
-            <option value="">👨‍🏫 Tất cả Giáo viên</option>
+            <option value="">👨‍🏫 Tất cả Người ra đề</option>
             {filteredTeachersForDropdown.map(([key, u]) => (
               <option key={key} value={key}>{u.displayName || key} ({key})</option>
             ))}
@@ -203,14 +212,14 @@ export default function FileManager({ user, onEditFile }) {
                   </td>
                   <td style={{ padding: '1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <button 
-                      onClick={() => onEditFile(f.fileUrl, category, subject, grade, f.author)}
+                      onClick={() => onEditFile(f.fileUrl, category, subject, grade, f.author, true)}
                       title="Xem nội dung và đáp án"
                       style={{ background: '#10B981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', marginRight: '6px', cursor: 'pointer', fontWeight: '500' }}>
                       👀 Xem
                     </button>
                     {canEdit && (
                       <button 
-                        onClick={() => onEditFile(f.fileUrl, category, subject, grade, f.author)}
+                        onClick={() => onEditFile(f.fileUrl, category, subject, grade, f.author, false)}
                         style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', marginRight: '6px', cursor: 'pointer', fontWeight: '500' }}>
                         ✏️ Sửa
                       </button>

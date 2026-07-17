@@ -59,10 +59,31 @@ async function updateSchema() {
       }
     };
 
+    // Thêm dạng bài tập chỉnh đồng hồ (CLOCK_SET)
+    schema.CLOCK_SET = {
+      "name": "Chỉnh đồng hồ",
+      "description": "Bài tập yêu cầu học sinh chỉnh giờ trên đồng hồ",
+      "fields": {
+        "content": {
+          "type": "string",
+          "label": "Yêu cầu (VD: Con hãy chỉnh đồng hồ...)"
+        },
+        "correctAnswer": {
+          "type": "string",
+          "label": "Giờ đúng (VD: 10:30)"
+        }
+      },
+      "template": {
+        "type": "CLOCK_SET",
+        "content": "Con hãy chỉnh đồng hồ chỉ 10 giờ 30 phút nhé!",
+        "correctAnswer": "10:30"
+      }
+    };
+
     // 3. Put ngược lên Github
     console.log("Đang cập nhật math.json lên Github...");
     const putBody = {
-      message: "Update MATH_ARITHMETIC schema to Word Problem",
+      message: "Update math.json to add CLOCK_SET schema",
       content: Buffer.from(JSON.stringify(schema, null, 2), 'utf8').toString('base64'),
       sha: sha,
       branch: BRANCH

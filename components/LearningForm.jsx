@@ -59,6 +59,7 @@ export default function LearningForm({ subject, onSave, initialData, readOnly })
           value={title} 
           onChange={e=>setTitle(e.target.value)} 
           style={{ marginBottom: '10px' }}
+          disabled={readOnly}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <label style={{ fontWeight: '600', color: 'var(--text-main)', minWidth: '120px' }}>Điểm thưởng:</label>
@@ -69,6 +70,7 @@ export default function LearningForm({ subject, onSave, initialData, readOnly })
             value={rewardPoints} 
             onChange={e=>setRewardPoints(Number(e.target.value))} 
             style={{ width: '100px', marginBottom: '0' }} 
+            disabled={readOnly}
           />
         </div>
       </div>
@@ -117,6 +119,7 @@ export default function LearningForm({ subject, onSave, initialData, readOnly })
                     placeholder="VD: Apple" 
                     value={item.word} 
                     onChange={e => handleWordChange(index, 'word', e.target.value)} 
+                    disabled={readOnly}
                   />
                 </div>
                 
@@ -128,6 +131,7 @@ export default function LearningForm({ subject, onSave, initialData, readOnly })
                     placeholder="VD: Quả táo" 
                     value={item.meaning} 
                     onChange={e => handleWordChange(index, 'meaning', e.target.value)} 
+                    disabled={readOnly}
                   />
                 </div>
                 
@@ -141,11 +145,13 @@ export default function LearningForm({ subject, onSave, initialData, readOnly })
                       value={item.emoji} 
                       onChange={e => handleWordChange(index, 'emoji', e.target.value)}
                       style={{ textAlign: 'center', fontSize: '1.5rem', padding: '8px' }} 
+                      disabled={readOnly}
                     />
                     <button 
                       type="button"
                       onClick={() => setActiveEmojiPicker(isPickerOpen ? null : index)}
                       style={{ padding: '0 10px', height: '52px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.15)', background: isPickerOpen ? 'var(--secondary)' : 'rgba(255,255,255,0.9)', color: isPickerOpen ? 'white' : 'inherit', cursor: 'pointer', fontSize: '1.5rem', transition: 'all 0.2s' }}
+                      disabled={readOnly}
                     >
                       😀
                     </button>

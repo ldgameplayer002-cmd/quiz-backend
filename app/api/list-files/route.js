@@ -33,6 +33,10 @@ export async function GET(request) {
     let activeFiles = [];
     let indexSha = null;
     const indexRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${indexPath}?ref=${BRANCH}`, { headers });
+    if (!indexRes.ok) {
+      const errText = await indexRes.text();
+      throw new Error(`Lỗi tải index.json từ Github: ${indexRes.status} - ${errText}`);
+    }
     
     if (indexRes.ok) {
       const indexData = await indexRes.json();
@@ -48,6 +52,11 @@ export async function GET(request) {
     // 2. Fetch Directory Contents
     const dirRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${dirPath}?ref=${BRANCH}`, { headers });
     let allFiles = [];
+    if (!dirRes.ok && dirRes.status !== 404) {
+      const errText = await dirRes.text();
+      throw new Error(`Lỗi tải thư mục từ Github: ${dirRes.status} - ${errText}`);
+    }
+    
     if (dirRes.ok) {
       allFiles = await dirRes.json();
     }

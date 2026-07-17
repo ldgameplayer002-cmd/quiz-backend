@@ -34,7 +34,8 @@ export default function Home() {
   const [learningAiJson, setLearningAiJson] = useState('');
 
   // Edit Mode State
-  const [editData, setEditData] = useState(null); // { url, sha, content }
+  const [editData, setEditData] = useState(null);
+  const [isReadOnlyGlobal, setIsReadOnlyGlobal] = useState(false); // { url, sha, content }
 
   // Form Mode State
   const [quizQuestions, setQuizQuestions] = useState([]);
@@ -270,7 +271,7 @@ export default function Home() {
     }
   };
 
-  const handleEditFile = async (fileUrl, category, sbj, grd, author) => {
+  const handleEditFile = async (fileUrl, category, sbj, grd, author, isViewOnly = false) => {
     setStatus({ message: 'Đang tải dữ liệu bài cũ...', type: 'info' });
     try {
       const res = await fetch(`/api/get-file?fileUrl=${encodeURIComponent(fileUrl)}`);
@@ -281,6 +282,8 @@ export default function Home() {
       setGrade(grd);
       setSubject(sbj);
       setActiveView(category === 'assignments' ? 'dashboard' : 'learning');
+      
+      setIsReadOnlyGlobal(isViewOnly);
       
       if (category === 'assignments') setActiveTab('form');
       if (category === 'learning') setLearningTab('form');
@@ -463,7 +466,6 @@ export default function Home() {
 
             <div style={{ padding: '2rem' }}>
               {(() => {
-                const isReadOnly = editData?.isEdit && editData?.author !== currentUser?.username && currentUser?.role !== 'ADMIN';
                 return (
                   <>
                     {learningTab === 'ai' && (
@@ -482,9 +484,9 @@ export default function Home() {
                           value={learningAiJson}
                           onChange={e => setLearningAiJson(e.target.value)}
                           style={{ resize: 'vertical', marginBottom: '1.5rem' }}
-                          disabled={isReadOnly}
+                          disabled={isReadOnlyGlobal}
                         />
-                        {!isReadOnly && (
+                        {!isReadOnlyGlobal && (
                           <button className="premium-btn" style={{ width: '100%', background: 'linear-gradient(135deg, #EC4899 0%, #BE185D 100%)' }} onClick={handleSaveLearningAI}>
                             Lưu Bài Học Lên Github
                           </button>
@@ -493,7 +495,7 @@ export default function Home() {
                     )}
 
                     {learningTab === 'form' && (
-                      <LearningForm key={`learning-${formResetKey}`} subject={subject} onSave={saveToLearningGithub} initialData={editData?.content} readOnly={isReadOnly} />
+                      <LearningForm key={`learning-${formResetKey}`} subject={subject} onSave={saveToLearningGithub} initialData={editData?.content} readOnly={isReadOnlyGlobal} />
                     )}
                   </>
                 );
@@ -651,16 +653,18 @@ export default function Home() {
                 value={aiJson}
                 onChange={e => setAiJson(e.target.value)}
                 style={{ resize: 'vertical', marginBottom: '1.5rem' }}
-                disabled={currentUser?.role === 'REVIEWER'}
+                disabled={isReadOnlyGlobal}
               />
-              {currentUser?.role !== 'REVIEWER' && (
-                <button className="premium-btn" style={{ width: '100%' }} onClick={handleSaveAI}>Lưu Đề Lên Github</button>
+              {!isReadOnlyGlobal && (
+                <button className="premium-btn" style={{ width: '100%' }} onClick={handleSaveAI}>
+                  Lưu Đề Lên Github
+                </button>
               )}
             </div>
           )}
 
           {activeTab === 'form' && (
-            <ManualQuizForm key={`quiz-${formResetKey}`} masterSchema={masterSchema} subject={subject} onSave={saveToGithub} initialData={editData?.content} readOnly={currentUser?.role === 'REVIEWER'} />
+            <ManualQuizForm key={`quiz-${formResetKey}`} masterSchema={masterSchema} subject={subject} onSave={saveToGithub} initialData={editData?.content} readOnly={isReadOnlyGlobal} />
           )}
         </div>
       </div>
@@ -686,6 +690,8 @@ export default function Home() {
                 setAiJson('');
                 setLearningAiJson('');
                 setEditData(null);
+                setIsReadOnlyGlobal(false);
+                setFormResetKey(Date.now());
                 setStatus({ message: '', type: '' });
               }}
             >

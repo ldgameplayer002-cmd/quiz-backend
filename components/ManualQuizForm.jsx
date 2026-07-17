@@ -96,6 +96,7 @@ export default function ManualQuizForm({ masterSchema, subject, onSave, initialD
           onChange={(e) => handleQuestionChange(qIndex, field, parseInt(e.target.value) || 0)} 
           placeholder={placeholder}
           style={{ marginBottom: '10px' }}
+          disabled={readOnly}
         />
       );
     }
@@ -108,6 +109,7 @@ export default function ManualQuizForm({ masterSchema, subject, onSave, initialD
           value={value} 
           onChange={(e) => handleQuestionChange(qIndex, field, e.target.value)}
           style={{ marginBottom: '10px' }}
+          disabled={readOnly}
         >
           <option value="">-- Chọn {fieldSchema.label || field} --</option>
           {fieldSchema.options && fieldSchema.options.map(opt => {
@@ -133,12 +135,14 @@ export default function ManualQuizForm({ masterSchema, subject, onSave, initialD
               onChange={(e) => handleQuestionChange(qIndex, field, e.target.value)} 
               placeholder={placeholder}
               style={{ resize: 'vertical', minHeight: '50px' }}
+              disabled={readOnly}
             />
             <button 
               type="button"
               onClick={() => setActiveEmojiPicker(isPickerOpen ? null : pickerId)}
               style={{ padding: '0 15px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.15)', background: isPickerOpen ? 'var(--primary)' : 'rgba(255,255,255,0.9)', color: isPickerOpen ? 'white' : 'inherit', cursor: 'pointer', fontSize: '1.5rem', transition: 'all 0.2s', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}
               title="Chèn Emoji"
+              disabled={readOnly}
             >
               😀
             </button>
@@ -173,6 +177,7 @@ export default function ManualQuizForm({ masterSchema, subject, onSave, initialD
         onChange={(e) => handleQuestionChange(qIndex, field, e.target.value)} 
         placeholder={placeholder}
         style={{ marginBottom: '10px', resize: 'vertical', minHeight: '40px' }}
+        disabled={readOnly}
       />
     );
   };
@@ -185,11 +190,11 @@ export default function ManualQuizForm({ masterSchema, subject, onSave, initialD
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeIn 0.3s ease-in-out' }}>
       <div style={{ padding: '1.5rem', background: 'white', borderRadius: '12px', border: '1px solid #E5E7EB', marginBottom: '2rem' }}>
         <h3 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>Thông tin chung của Đề</h3>
-        <input type="text" className="premium-input" placeholder="Tiêu đề (VD: Bài tập cuối tuần)" value={title} onChange={e=>setTitle(e.target.value)} style={{ marginBottom: '10px' }} />
-        <input type="text" className="premium-input" placeholder="Mô tả..." value={description} onChange={e=>setDescription(e.target.value)} style={{ marginBottom: '10px' }} />
+        <input type="text" className="premium-input" placeholder="Tiêu đề (VD: Bài tập cuối tuần)" value={title} onChange={e=>setTitle(e.target.value)} style={{ marginBottom: '10px' }} disabled={readOnly} />
+        <input type="text" className="premium-input" placeholder="Mô tả..." value={description} onChange={e=>setDescription(e.target.value)} style={{ marginBottom: '10px' }} disabled={readOnly} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
           <label style={{ fontWeight: '600', color: 'var(--text-main)', minWidth: '120px' }}>Điểm thưởng:</label>
-          <input type="number" className="premium-input" placeholder="20" value={rewardPoints} onChange={e=>setRewardPoints(Number(e.target.value))} style={{ width: '100px', marginBottom: '0' }} />
+          <input type="number" className="premium-input" placeholder="20" value={rewardPoints} onChange={e=>setRewardPoints(Number(e.target.value))} style={{ width: '100px', marginBottom: '0' }} disabled={readOnly} />
         </div>
       </div>
 
